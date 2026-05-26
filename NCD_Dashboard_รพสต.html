@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบติดตามผู้ป่วย NCD — โรงพยาบาลส่งเสริมสุขภาพตำบล</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --primary: #1565C0;
+    --primary-light: #1976D2;
+    --primary-dark: #0D47A1;
+    --accent: #00ACC1;
+    --success: #2E7D32;
+    --warning: #F57F17;
+    --danger: #C62828;
+    --dm-color: #E65100;
+    --ht-color: #6A1B9A;
+    --bg: #F0F4F8;
+    --card: #ffffff;
+    --text: #1A237E;
+    --text-muted: #546E7A;
+    --border: #CFD8DC;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--accent) 100%);
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .header-icon {
+    width: 52px; height: 52px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  .header-title h1 { font-size: 1.3rem; font-weight: 700; }
+  .header-title p { font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
+  .header-meta {
+    text-align: right;
+    font-size: 0.82rem;
+    opacity: 0.9;
+  }
+  .header-meta strong { font-size: 1rem; }
+
+  /* ===== NAV TABS ===== */
+  .nav-tabs {
+    display: flex;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+    padding: 0 24px;
+    gap: 4px;
+    overflow-x: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  }
+  .nav-tab {
+    padding: 12px 22px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .nav-tab:hover { color: var(--primary); }
+  .nav-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 700;
+  }
+
+  /* ===== MAIN CONTENT ===== */
+  .main { padding: 20px 24px; max-width: 1300px; margin: 0 auto; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ===== SECTION TITLE ===== */
+  .section-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to right, var(--border), transparent);
+    margin-left: 8px;
+  }
+
+  /* ===== STAT CARDS ===== */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-left: 5px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: attr(data-icon);
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    font-size: 1.8rem;
+    opacity: 0.12;
+  }
+  .stat-card.dm { border-left-color: var(--dm-color); }
+  .stat-card.ht { border-left-color: var(--ht-color); }
+  .stat-card.success { border-left-color: var(--success); }
+  .stat-card.warning { border-left-color: var(--warning); }
+  .stat-card.danger { border-left-color: var(--danger); }
+
+  .stat-label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .stat-value { font-size: 2rem; font-weight: 700; line-height: 1; color: var(--text); }
+  .stat-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+  /* ===== GRID LAYOUT ===== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ===== CARD ===== */
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 18px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    background: #F8FAFC;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-header .badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .badge-dm { background: #FFF3E0; color: var(--dm-color); }
+  .badge-ht { background: #F3E5F5; color: var(--ht-color); }
+  .badge-success { background: #E8F5E9; color: var(--success); }
+  .badge-warning { background: #FFFDE7; color: #F57F17; }
+  .badge-danger { background: #FFEBEE; color: var(--danger); }
+
+  .card-body { padding: 16px 18px; }
+  .chart-wrap { position: relative; }
+
+  /* ===== TABLE ===== */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+  }
+  thead tr {
+    background: linear-gradient(to right, #E3F2FD, #EDE7F6);
+  }
+  th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--primary-dark);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #ECEFF1;
+    vertical-align: middle;
+  }
+  tr:hover td { background: #F8FBFF; }
+  tr:last-child td { border-bottom: none; }
+
+  .risk-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .risk-low { background: #E8F5E9; color: #2E7D32; }
+  .risk-mid { background: #FFFDE7; color: #F57F17; }
+  .risk-high { background: #FFEBEE; color: #C62828; }
+
+  /* ===== PROGRESS BAR ===== */
+  .progress-wrap { margin: 8px 0; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+  .progress-bar {
+    height: 8px;
+    background: #E0E7EF;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .fill-success { background: linear-gradient(to right, #43A047, #66BB6A); }
+  .fill-warning { background: linear-gradient(to right, #FB8C00, #FFA726); }
+  .fill-danger  { background: linear-gradient(to right, #E53935, #EF5350); }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 14px 18px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    margin-bottom: 18px;
+  }
+  .filter-bar label { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+  .filter-bar select, .filter-bar input {
+    padding: 7px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text);
+    background: #F8FAFC;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .filter-bar select:focus, .filter-bar input:focus {
+    border-color: var(--primary-light);
+  }
+  .btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+
+  /* ===== ALERT BOX ===== */
+  .alert-box {
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+  }
+  .alert-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+  .alert-danger { background: #FFEBEE; color: #B71C1C; border-left: 4px solid #E53935; }
+  .alert-warning { background: #FFFDE7; color: #E65100; border-left: 4px solid #FB8C00; }
+  .alert-info { background: #E3F2FD; color: #0D47A1; border-left: 4px solid #1976D2; }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 30px;
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    .nav-tabs, .filter-bar, .btn { display: none !important; }
+    .tab-content { display: block !important; }
+    body { background: #fff; }
+    .card { box-shadow: none; border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">🏥</div>
+    <div class="header-title">
+      <h1>ระบบติดตามผู้ป่วยโรคไม่ติดต่อเรื้อรัง (NCD)</h1>
+      <p>โรงพยาบาลส่งเสริมสุขภาพตำบล — ข้อมูล ณ ปีงบประมาณ 2568</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div><strong id="today-date">—</strong></div>
+    <div>ข้อมูลตัวอย่างเพื่อสาธิตระบบ</div>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('overview')">📊 ภาพรวม</button>
+  <button class="nav-tab" onclick="switchTab('dm')">🩸 เบาหวาน (DM)</button>
+  <button class="nav-tab" onclick="switchTab('ht')">💊 ความดันโลหิตสูง (HT)</button>
+  <button class="nav-tab" onclick="switchTab('patients')">👥 ทะเบียนผู้ป่วย</button>
+  <button class="nav-tab" onclick="switchTab('visit')">📅 บันทึกการเยี่ยมบ้าน</button>
+</div>
+
+<div class="main">
+
+<!-- ==================== TAB: OVERVIEW ==================== -->
+<div id="tab-overview" class="tab-content active">
+
+  <div class="section-title">📌 สรุปภาพรวมผู้ป่วย NCD ในพื้นที่</div>
+
+  <div class="stat-grid">
+    <div class="stat-card" data-icon="👥">
+      <div class="stat-label">ผู้ป่วยทั้งหมด</div>
+      <div class="stat-value">342</div>
+      <div class="stat-sub">ลงทะเบียนในระบบ</div>
+    </div>
+    <div class="stat-card dm" data-icon="🩸">
+      <div class="stat-label">เบาหวาน (DM)</div>
+      <div class="stat-value">189</div>
+      <div class="stat-sub">55.3% ของผู้ป่วย NCD</div>
+    </div>
+    <div class="stat-card ht" data-icon="💊">
+      <div class="stat-label">ความดันโลหิตสูง (HT)</div>
+      <div class="stat-value">215</div>
+      <div class="stat-sub">62.9% ของผู้ป่วย NCD</div>
+    </div>
+    <div class="stat-card" data-icon="⚠️" style="border-left-color:#7B1FA2;">
+      <div class="stat-label">DM + HT ร่วม</div>
+      <div class="stat-value">62</div>
+      <div class="stat-sub">กลุ่มเสี่ยงสูง</div>
+    </div>
+    <div class="stat-card danger" data-icon="🔴">
+      <div class="stat-label">ควบคุมไม่ได้ (DM)</div>
+      <div class="stat-value">47</div>
+      <div class="stat-sub">HbA1c ≥ 9% จำนวน 47 ราย</div>
+    </div>
+    <div class="stat-card danger" data-icon="🔴">
+      <div class="stat-label">ควบคุมไม่ได้ (HT)</div>
+      <div class="stat-value">38</div>
+      <div class="stat-sub">BP ≥ 160/100 mmHg</div>
+    </div>
+    <div class="stat-card warning" data-icon="🏠">
+      <div class="stat-label">รอเยี่ยมบ้าน</div>
+      <div class="stat-value">23</div>
+      <div class="stat-sub">ยังไม่ได้เยี่ยมใน 3 เดือน</div>
+    </div>
+    <div class="stat-card success" data-icon="✅">
+      <div class="stat-label">ควบคุมได้ดี (DM)</div>
+      <div class="stat-value">102</div>
+      <div class="stat-sub">HbA1c < 7% คิดเป็น 54%</div>
+    </div>
+  </div>
+
+  <!-- Alert Section -->
+  <div class="section-title">⚠️ การแจ้งเตือนที่ต้องดำเนินการ</div>
+  <div class="alert-box alert-danger">
+    <div class="alert-icon">🚨</div>
+    <div><strong>พบผู้ป่วย DM ที่มี HbA1c สูงเกิน 10%</strong> จำนวน 12 ราย ควรนัดพบแพทย์ภายใน 2 สัปดาห์ และประเมินการใช้ยา</div>
+  </div>
+  <div class="alert-box alert-danger">
+    <div class="alert-icon">🚨</div>
+    <div><strong>ผู้ป่วย HT ที่วัด BP ≥ 180/110 mmHg</strong> จำนวน 8 ราย เสี่ยงภาวะ Hypertensive Crisis — ต้องติดตามทันที</div>
+  </div>
+  <div class="alert-box alert-warning">
+    <div class="alert-icon">⚠️</div>
+    <div><strong>ผู้ป่วย DM+HT กลุ่มเสี่ยงสูง</strong> จำนวน 62 ราย ยังไม่ได้รับการประเมินโรคไตในปีนี้ 18 ราย</div>
+  </div>
+  <div class="alert-box alert-info">
+    <div class="alert-icon">ℹ️</div>
+    <div><strong>ผู้ป่วยที่ขาดนัดมากกว่า 2 ครั้ง</strong> จำนวน 16 ราย — ควรโทรติดตาม/เยี่ยมบ้าน</div>
+  </div>
+
+  <!-- Charts -->
+  <div class="section-title">📈 การกระจายผลการควบคุมโรค</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">การควบคุมน้ำตาล (HbA1c) — ผู้ป่วยเบาหวาน 189 ราย <span class="badge badge-dm">DM</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:220px;"><canvas id="chartDMControl"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">การควบคุมความดันโลหิต — ผู้ป่วย HT 215 ราย <span class="badge badge-ht">HT</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:220px;"><canvas id="chartHTControl"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">แนวโน้ม HbA1c เฉลี่ยรายเดือน (ปี 2568)</div>
+      <div class="card-body"><div class="chart-wrap" style="height:220px;"><canvas id="chartTrendDM"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">แนวโน้ม BP Systolic เฉลี่ยรายเดือน (ปี 2568)</div>
+      <div class="card-body"><div class="chart-wrap" style="height:220px;"><canvas id="chartTrendHT"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="section-title">📊 ตัวชี้วัดคุณภาพ (KPI) ปีงบประมาณ 2568</div>
+  <div class="card">
+    <div class="card-body">
+      <div class="progress-wrap">
+        <div class="progress-label"><span>DM ควบคุมได้ดี (HbA1c &lt; 7%)</span><span>54% / เป้า 60%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:54%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>HT ควบคุมได้ดี (BP &lt; 140/90)</span><span>62% / เป้า 65%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:62%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ผู้ป่วย DM ได้รับการตรวจ HbA1c ตามเกณฑ์</span><span>81% / เป้า 80%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-success" style="width:81%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ผู้ป่วย DM ได้รับการตรวจตา</span><span>45% / เป้า 70%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-danger" style="width:45%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ผู้ป่วย DM ได้รับการตรวจเท้า</span><span>58% / เป้า 70%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:58%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ผู้ป่วย DM+HT ได้รับการตรวจไต (eGFR)</span><span>71% / เป้า 80%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:71%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>การเยี่ยมบ้านผู้ป่วยกลุ่มเสี่ยง</span><span>88% / เป้า 90%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-success" style="width:88%"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB: DM ==================== -->
+<div id="tab-dm" class="tab-content">
+  <div class="section-title">🩸 สรุปข้อมูลผู้ป่วยเบาหวาน (DM) — 189 ราย</div>
+
+  <div class="stat-grid">
+    <div class="stat-card dm" data-icon="🩸"><div class="stat-label">DM ทั้งหมด</div><div class="stat-value">189</div><div class="stat-sub">ลงทะเบียนปี 2568</div></div>
+    <div class="stat-card success" data-icon="✅"><div class="stat-label">HbA1c &lt; 7%</div><div class="stat-value">102</div><div class="stat-sub">ควบคุมได้ดี (54%)</div></div>
+    <div class="stat-card warning" data-icon="⚡"><div class="stat-label">HbA1c 7–9%</div><div class="stat-value">40</div><div class="stat-sub">ควบคุมได้ปานกลาง (21%)</div></div>
+    <div class="stat-card danger" data-icon="🔴"><div class="stat-label">HbA1c ≥ 9%</div><div class="stat-value">47</div><div class="stat-sub">ควบคุมไม่ได้ (25%)</div></div>
+    <div class="stat-card" data-icon="💉" style="border-left-color:#00838F"><div class="stat-label">ใช้ยาฉีด Insulin</div><div class="stat-value">28</div><div class="stat-sub">14.8% ของผู้ป่วย DM</div></div>
+    <div class="stat-card danger" data-icon="😷"><div class="stat-label">มีภาวะแทรกซ้อน</div><div class="stat-value">34</div><div class="stat-sub">ไต / ตา / เท้า / หัวใจ</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">การกระจาย HbA1c <span class="badge badge-dm">DM</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:230px;"><canvas id="chartDMHbA1c"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">ภาวะแทรกซ้อนที่พบ <span class="badge badge-dm">DM</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:230px;"><canvas id="chartDMComp"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="section-title">🏃 กลุ่มผู้ป่วยที่ต้องติดตามเร่งด่วน (HbA1c ≥ 9%)</div>
+  <div class="card">
+    <div class="card-body table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>HN</th>
+            <th>ชื่อ-สกุล</th>
+            <th>อายุ</th>
+            <th>HbA1c ล่าสุด</th>
+            <th>วันตรวจล่าสุด</th>
+            <th>ยาที่ใช้</th>
+            <th>ภาวะแทรกซ้อน</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="dm-urgent-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">📋 รายการตรวจที่ต้องทำในปีนี้ (DM Quality Indicators)</div>
+  <div class="card">
+    <div class="card-body">
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ตรวจ HbA1c อย่างน้อย 2 ครั้ง/ปี</span><span>81%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-success" style="width:81%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ตรวจตา (Fundus)</span><span>45%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-danger" style="width:45%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ตรวจเท้า (Foot Exam)</span><span>58%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:58%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ตรวจการทำงานไต (Creatinine/eGFR)</span><span>71%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:71%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ตรวจ Microalbumin ในปัสสาวะ</span><span>62%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-warning" style="width:62%"></div></div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span>ตรวจ Lipid profile</span><span>76%</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-success" style="width:76%"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB: HT ==================== -->
+<div id="tab-ht" class="tab-content">
+  <div class="section-title">💊 สรุปข้อมูลผู้ป่วยความดันโลหิตสูง (HT) — 215 ราย</div>
+
+  <div class="stat-grid">
+    <div class="stat-card ht" data-icon="💊"><div class="stat-label">HT ทั้งหมด</div><div class="stat-value">215</div><div class="stat-sub">ลงทะเบียนปี 2568</div></div>
+    <div class="stat-card success" data-icon="✅"><div class="stat-label">BP &lt; 140/90</div><div class="stat-value">134</div><div class="stat-sub">ควบคุมได้ดี (62%)</div></div>
+    <div class="stat-card warning" data-icon="⚡"><div class="stat-label">BP 140–160/90–100</div><div class="stat-value">43</div><div class="stat-sub">ควบคุมได้ปานกลาง (20%)</div></div>
+    <div class="stat-card danger" data-icon="🔴"><div class="stat-label">BP ≥ 160/100</div><div class="stat-value">38</div><div class="stat-sub">ควบคุมไม่ได้ (18%)</div></div>
+    <div class="stat-card" data-icon="💔" style="border-left-color:#C62828"><div class="stat-label">เสี่ยงโรคหัวใจ (CVD Risk ≥ 20%)</div><div class="stat-value">29</div><div class="stat-sub">13.5% ของผู้ป่วย HT</div></div>
+    <div class="stat-card danger" data-icon="😷"><div class="stat-label">ภาวะแทรกซ้อน</div><div class="stat-value">21</div><div class="stat-sub">หัวใจ / หลอดเลือดสมอง / ไต</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">การกระจายระดับ Systolic BP <span class="badge badge-ht">HT</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:230px;"><canvas id="chartHTBP"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">จำนวนยาที่ใช้ต่อผู้ป่วย <span class="badge badge-ht">HT</span></div>
+      <div class="card-body"><div class="chart-wrap" style="height:230px;"><canvas id="chartHTMed"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="section-title">🏃 กลุ่มผู้ป่วยที่ต้องติดตามเร่งด่วน (BP ≥ 160/100 mmHg)</div>
+  <div class="card">
+    <div class="card-body table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>HN</th>
+            <th>ชื่อ-สกุล</th>
+            <th>อายุ</th>
+            <th>BP ล่าสุด</th>
+            <th>วันวัดล่าสุด</th>
+            <th>ยาที่ใช้</th>
+            <th>ระดับความเสี่ยง</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="ht-urgent-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB: PATIENTS ==================== -->
+<div id="tab-patients" class="tab-content">
+  <div class="section-title">👥 ทะเบียนผู้ป่วย NCD</div>
+
+  <div class="filter-bar">
+    <label>กรองโรค:</label>
+    <select id="filter-disease" onchange="renderPatientTable()">
+      <option value="all">ทั้งหมด</option>
+      <option value="DM">เบาหวาน</option>
+      <option value="HT">ความดัน</option>
+      <option value="DM+HT">DM+HT</option>
+    </select>
+    <label>ระดับความเสี่ยง:</label>
+    <select id="filter-risk" onchange="renderPatientTable()">
+      <option value="all">ทั้งหมด</option>
+      <option value="สูง">สูง</option>
+      <option value="ปานกลาง">ปานกลาง</option>
+      <option value="ต่ำ">ต่ำ</option>
+    </select>
+    <label>ค้นหาชื่อ:</label>
+    <input type="text" id="filter-name" placeholder="พิมพ์ชื่อผู้ป่วย…" oninput="renderPatientTable()" style="width:180px;">
+    <button class="btn btn-primary" onclick="renderPatientTable()">🔍 ค้นหา</button>
+    <span id="patient-count" style="font-size:0.82rem;color:var(--text-muted);margin-left:auto;"></span>
+  </div>
+
+  <div class="card">
+    <div class="card-body table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>HN</th>
+            <th>ชื่อ-สกุล</th>
+            <th>อายุ</th>
+            <th>เพศ</th>
+            <th>โรค</th>
+            <th>HbA1c</th>
+            <th>BP (mmHg)</th>
+            <th>วันนัดครั้งต่อไป</th>
+            <th>ความเสี่ยง</th>
+            <th>หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="patient-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TAB: VISIT ==================== -->
+<div id="tab-visit" class="tab-content">
+  <div class="section-title">📅 บันทึกการเยี่ยมบ้านและติดตามผู้ป่วย</div>
+
+  <div class="stat-grid">
+    <div class="stat-card success" data-icon="🏠"><div class="stat-label">เยี่ยมบ้านแล้ว (3 เดือนล่าสุด)</div><div class="stat-value">89</div><div class="stat-sub">จากกลุ่มเสี่ยง 112 ราย</div></div>
+    <div class="stat-card danger" data-icon="⏰"><div class="stat-label">รอเยี่ยมบ้าน</div><div class="stat-value">23</div><div class="stat-sub">เกินกำหนด 3 เดือน</div></div>
+    <div class="stat-card warning" data-icon="📞"><div class="stat-label">ขาดนัด ≥ 2 ครั้ง</div><div class="stat-value">16</div><div class="stat-sub">ต้องโทรติดตาม</div></div>
+    <div class="stat-card" data-icon="📋" style="border-left-color:#00838F"><div class="stat-label">เยี่ยมในเดือนนี้</div><div class="stat-value">18</div><div class="stat-sub">พฤษภาคม 2568</div></div>
+  </div>
+
+  <div class="section-title">📋 รายการเยี่ยมบ้านล่าสุด</div>
+  <div class="card">
+    <div class="card-body table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>HN</th>
+            <th>ชื่อ-สกุล</th>
+            <th>วันที่เยี่ยม</th>
+            <th>ผู้เยี่ยม</th>
+            <th>ผลการเยี่ยม</th>
+            <th>BP/น้ำตาล วันเยี่ยม</th>
+            <th>การดูแลต่อเนื่อง</th>
+          </tr>
+        </thead>
+        <tbody id="visit-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">⏰ รายชื่อผู้ป่วยที่รอเยี่ยมบ้าน (เร่งด่วน)</div>
+  <div class="card">
+    <div class="card-body table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>HN</th>
+            <th>ชื่อ-สกุล</th>
+            <th>โรค</th>
+            <th>เยี่ยมล่าสุด</th>
+            <th>วันที่เกิน</th>
+            <th>เบอร์โทร</th>
+            <th>ระดับความเร่งด่วน</th>
+          </tr>
+        </thead>
+        <tbody id="pending-visit-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<div class="footer">
+  ระบบติดตามผู้ป่วย NCD — โรงพยาบาลส่งเสริมสุขภาพตำบล | ข้อมูลตัวอย่างเพื่อสาธิตระบบ | พัฒนาด้วย Claude AI
+</div>
+
+<script>
+// ===== DATE =====
+const d = new Date();
+document.getElementById('today-date').textContent =
+  d.toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+
+// ===== TAB SWITCH =====
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ===== SAMPLE DATA =====
+const PATIENTS = [
+  {hn:'6801-0001',name:'นายสมชาย ใจดี',age:62,sex:'ชาย',disease:'DM+HT',hba1c:10.2,bp:'178/102',next:'2025-06-10',risk:'สูง',note:'HbA1c สูงมาก ปรับยา'},
+  {hn:'6801-0002',name:'นางสาวมาลี สุขสวัสดิ์',age:55,sex:'หญิง',disease:'DM',hba1c:6.8,bp:'128/80',next:'2025-07-15',risk:'ต่ำ',note:'ควบคุมดี'},
+  {hn:'6801-0003',name:'นายประเสริฐ วงษ์ทอง',age:70,sex:'ชาย',disease:'HT',hba1c:'—',bp:'168/98',next:'2025-06-05',risk:'สูง',note:'BP สูง ยา 3 ชนิด'},
+  {hn:'6801-0004',name:'นางสุดา ดอกบัว',age:48,sex:'หญิง',disease:'DM',hba1c:9.5,bp:'135/85',next:'2025-06-20',risk:'สูง',note:'ไม่สม่ำเสมอในการรับยา'},
+  {hn:'6801-0005',name:'นายวิชัย ทองคำ',age:66,sex:'ชาย',disease:'DM+HT',hba1c:7.8,bp:'145/92',next:'2025-06-25',risk:'ปานกลาง',note:'ควบคุมได้ปานกลาง'},
+  {hn:'6801-0006',name:'นางลำดวน สิงห์ทอง',age:72,sex:'หญิง',disease:'HT',hba1c:'—',bp:'182/110',next:'2025-06-03',risk:'สูง',note:'เสี่ยง Hypertensive Crisis'},
+  {hn:'6801-0007',name:'นายบุญมี รักษาดี',age:58,sex:'ชาย',disease:'DM',hba1c:6.5,bp:'130/82',next:'2025-08-01',risk:'ต่ำ',note:'ควบคุมดีมาก'},
+  {hn:'6801-0008',name:'นางรำพรรณ จันทร์เพ็ญ',age:53,sex:'หญิง',disease:'DM+HT',hba1c:11.3,bp:'172/106',next:'2025-05-28',risk:'สูง',note:'ต้องปรึกษาแพทย์ด่วน'},
+  {hn:'6801-0009',name:'นายอุดม ศรีสวัสดิ์',age:61,sex:'ชาย',disease:'HT',hba1c:'—',bp:'138/88',next:'2025-07-10',risk:'ต่ำ',note:'ดีขึ้นหลังปรับยา'},
+  {hn:'6801-0010',name:'นางนิตยา พรมมา',age:45,sex:'หญิง',disease:'DM',hba1c:8.9,bp:'140/90',next:'2025-06-15',risk:'ปานกลาง',note:'ควรปรับพฤติกรรม'},
+  {hn:'6801-0011',name:'นายสมบัติ ลาภมาก',age:68,sex:'ชาย',disease:'DM+HT',hba1c:9.1,bp:'165/100',next:'2025-06-08',risk:'สูง',note:'มีภาวะแทรกซ้อนไต'},
+  {hn:'6801-0012',name:'นางสมศรี บุญฤทธิ์',age:50,sex:'หญิง',disease:'HT',hba1c:'—',bp:'152/96',next:'2025-06-18',risk:'ปานกลาง',note:'ปรับยาครั้งที่ 2'},
+  {hn:'6801-0013',name:'นายธวัชชัย ทองแดง',age:64,sex:'ชาย',disease:'DM',hba1c:7.2,bp:'132/84',next:'2025-07-20',risk:'ต่ำ',note:'ควบคุมได้ดี'},
+  {hn:'6801-0014',name:'นางมณี สุวรรณชาติ',age:57,sex:'หญิง',disease:'DM+HT',hba1c:10.8,bp:'170/104',next:'2025-05-30',risk:'สูง',note:'ขาดนัด 2 ครั้ง'},
+  {hn:'6801-0015',name:'นายพิชัย วัฒนา',age:73,sex:'ชาย',disease:'HT',hba1c:'—',bp:'158/94',next:'2025-06-22',risk:'ปานกลาง',note:'อายุมาก ดูแลใกล้ชิด'},
+];
+
+// ===== RENDER PATIENT TABLE =====
+function renderPatientTable() {
+  const diseaseF = document.getElementById('filter-disease').value;
+  const riskF = document.getElementById('filter-risk').value;
+  const nameF = document.getElementById('filter-name').value.toLowerCase();
+
+  const filtered = PATIENTS.filter(p => {
+    if (diseaseF !== 'all' && p.disease !== diseaseF) return false;
+    if (riskF !== 'all' && p.risk !== riskF) return false;
+    if (nameF && !p.name.toLowerCase().includes(nameF)) return false;
+    return true;
+  });
+
+  document.getElementById('patient-count').textContent = `แสดง ${filtered.length} จาก ${PATIENTS.length} ราย`;
+
+  const tbody = document.getElementById('patient-table-body');
+  tbody.innerHTML = filtered.map(p => `
+    <tr>
+      <td><strong>${p.hn}</strong></td>
+      <td>${p.name}</td>
+      <td>${p.age} ปี</td>
+      <td>${p.sex}</td>
+      <td>
+        ${p.disease.includes('DM') ? '<span class="risk-badge" style="background:#FFF3E0;color:#E65100;">DM</span> ' : ''}
+        ${p.disease.includes('HT') ? '<span class="risk-badge" style="background:#F3E5F5;color:#6A1B9A;">HT</span>' : ''}
+      </td>
+      <td>${typeof p.hba1c === 'number' ? `<strong>${p.hba1c}%</strong>` : p.hba1c}</td>
+      <td>${p.bp}</td>
+      <td>${p.next}</td>
+      <td><span class="risk-badge ${p.risk==='สูง'?'risk-high':p.risk==='ปานกลาง'?'risk-mid':'risk-low'}">${p.risk}</span></td>
+      <td style="font-size:0.78rem;color:var(--text-muted);">${p.note}</td>
+    </tr>
+  `).join('');
+}
+renderPatientTable();
+
+// ===== RENDER DM URGENT TABLE =====
+const DM_URGENT = [
+  {hn:'6801-0001',name:'นายสมชาย ใจดี',age:62,hba1c:10.2,date:'10 เม.ย. 2568',med:'Metformin+Glipizide',comp:'ไต G3',status:'นัด รพ.'},
+  {hn:'6801-0004',name:'นางสุดา ดอกบัว',age:48,hba1c:9.5,date:'15 เม.ย. 2568',med:'Metformin',comp:'ไม่มี',status:'ติดตาม'},
+  {hn:'6801-0008',name:'นางรำพรรณ จันทร์เพ็ญ',age:53,hba1c:11.3,date:'5 พ.ค. 2568',med:'Insulin+Metformin',comp:'ตา, ไต',status:'ด่วน'},
+  {hn:'6801-0011',name:'นายสมบัติ ลาภมาก',age:68,hba1c:9.1,date:'20 เม.ย. 2568',med:'Glipizide+Metformin',comp:'ไต G2',status:'นัด รพ.'},
+  {hn:'6801-0014',name:'นางมณี สุวรรณชาติ',age:57,hba1c:10.8,date:'1 เม.ย. 2568',med:'Metformin',comp:'ไม่มี',status:'ขาดนัด'},
+];
+
+document.getElementById('dm-urgent-table').innerHTML = DM_URGENT.map((p,i) => `
+  <tr>
+    <td>${i+1}</td>
+    <td><strong>${p.hn}</strong></td>
+    <td>${p.name}</td>
+    <td>${p.age} ปี</td>
+    <td><strong style="color:var(--danger);">${p.hba1c}%</strong></td>
+    <td>${p.date}</td>
+    <td>${p.med}</td>
+    <td>${p.comp}</td>
+    <td><span class="risk-badge ${p.status==='ด่วน'?'risk-high':p.status==='ขาดนัด'?'risk-high':'risk-mid'}">${p.status}</span></td>
+  </tr>
+`).join('');
+
+// ===== RENDER HT URGENT TABLE =====
+const HT_URGENT = [
+  {hn:'6801-0003',name:'นายประเสริฐ วงษ์ทอง',age:70,bp:'168/98',date:'12 เม.ย. 2568',med:'Amlodipine+Losartan+HCT',risk:'สูง',status:'ติดตาม'},
+  {hn:'6801-0006',name:'นางลำดวน สิงห์ทอง',age:72,bp:'182/110',date:'5 พ.ค. 2568',med:'Amlodipine',risk:'สูงมาก',status:'ด่วน'},
+  {hn:'6801-0008',name:'นางรำพรรณ จันทร์เพ็ญ',age:53,bp:'172/106',date:'5 พ.ค. 2568',med:'Losartan+HCT',risk:'สูง',status:'ด่วน'},
+  {hn:'6801-0011',name:'นายสมบัติ ลาภมาก',age:68,bp:'165/100',date:'20 เม.ย. 2568',med:'Amlodipine+Losartan',risk:'สูง',status:'นัด รพ.'},
+  {hn:'6801-0014',name:'นางมณี สุวรรณชาติ',age:57,bp:'170/104',date:'1 เม.ย. 2568',med:'Losartan',risk:'สูง',status:'ขาดนัด'},
+];
+
+document.getElementById('ht-urgent-table').innerHTML = HT_URGENT.map((p,i) => `
+  <tr>
+    <td>${i+1}</td>
+    <td><strong>${p.hn}</strong></td>
+    <td>${p.name}</td>
+    <td>${p.age} ปี</td>
+    <td><strong style="color:var(--danger);">${p.bp}</strong></td>
+    <td>${p.date}</td>
+    <td>${p.med}</td>
+    <td><span class="risk-badge ${p.risk==='สูงมาก'?'risk-high':'risk-mid'}">${p.risk}</span></td>
+    <td><span class="risk-badge ${p.status==='ด่วน'?'risk-high':p.status==='ขาดนัด'?'risk-high':'risk-mid'}">${p.status}</span></td>
+  </tr>
+`).join('');
+
+// ===== VISIT TABLE =====
+const VISITS = [
+  {i:1,hn:'6801-0008',name:'นางรำพรรณ จันทร์เพ็ญ',date:'10 พ.ค. 2568',by:'นาย พรชัย อาสา (อสม.)',result:'ผู้ป่วยอยู่บ้าน รับยาไม่สม่ำเสมอ',measure:'BP 175/105 น้ำตาล 280',followup:'นัดพบแพทย์ 15 พ.ค.'},
+  {i:2,hn:'6801-0006',name:'นางลำดวน สิงห์ทอง',date:'8 พ.ค. 2568',by:'น.ส.สมหญิง สาธารณสุข',result:'ลูกดูแล วัด BP สม่ำเสมอ',measure:'BP 178/108',followup:'ส่งต่อ รพ. ฉุกเฉิน'},
+  {i:3,hn:'6801-0011',name:'นายสมบัติ ลาภมาก',date:'5 พ.ค. 2568',by:'น.ส.สมหญิง สาธารณสุข',result:'สภาพดี เข้าใจการดูแลตนเอง',measure:'BP 162/98 น้ำตาล 195',followup:'ติดตาม 1 เดือน'},
+  {i:4,hn:'6801-0001',name:'นายสมชาย ใจดี',date:'3 พ.ค. 2568',by:'นาย พรชัย อาสา (อสม.)',result:'รับยาไม่ครบ ขาด 3 วัน',measure:'น้ำตาล 320',followup:'แนะนำและนัด รพ.'},
+  {i:5,hn:'6801-0014',name:'นางมณี สุวรรณชาติ',date:'1 พ.ค. 2568',by:'น.ส.สมหญิง สาธารณสุข',result:'ไม่พบผู้ป่วยที่บ้าน',measure:'—',followup:'โทรนัดอีกครั้ง'},
+];
+
+document.getElementById('visit-table').innerHTML = VISITS.map(v => `
+  <tr>
+    <td>${v.i}</td>
+    <td><strong>${v.hn}</strong></td>
+    <td>${v.name}</td>
+    <td>${v.date}</td>
+    <td>${v.by}</td>
+    <td style="font-size:0.82rem;">${v.result}</td>
+    <td style="font-size:0.82rem;">${v.measure}</td>
+    <td style="font-size:0.78rem;color:var(--text-muted);">${v.followup}</td>
+  </tr>
+`).join('');
+
+// Pending visits
+const PENDING = [
+  {i:1,hn:'6801-0014',name:'นางมณี สุวรรณชาติ',disease:'DM+HT',last:'1 เม.ย. 2568',days:'เกิน 49 วัน',tel:'081-234-5678',urgency:'ด่วนมาก'},
+  {i:2,hn:'6801-0006',name:'นางลำดวน สิงห์ทอง',disease:'HT',last:'8 เม.ย. 2568',days:'เกิน 42 วัน',tel:'082-345-6789',urgency:'ด่วนมาก'},
+  {i:3,hn:'6801-0003',name:'นายประเสริฐ วงษ์ทอง',disease:'HT',last:'12 เม.ย. 2568',days:'เกิน 38 วัน',tel:'083-456-7890',urgency:'ด่วน'},
+  {i:4,hn:'6801-0004',name:'นางสุดา ดอกบัว',disease:'DM',last:'15 เม.ย. 2568',days:'เกิน 35 วัน',tel:'084-567-8901',urgency:'ด่วน'},
+  {i:5,hn:'6801-0012',name:'นางสมศรี บุญฤทธิ์',disease:'HT',last:'18 เม.ย. 2568',days:'เกิน 32 วัน',tel:'085-678-9012',urgency:'ปกติ'},
+];
+
+document.getElementById('pending-visit-table').innerHTML = PENDING.map(p => `
+  <tr>
+    <td>${p.i}</td>
+    <td><strong>${p.hn}</strong></td>
+    <td>${p.name}</td>
+    <td>${p.disease}</td>
+    <td>${p.last}</td>
+    <td style="color:var(--danger);font-weight:600;">${p.days}</td>
+    <td>${p.tel}</td>
+    <td><span class="risk-badge ${p.urgency==='ด่วนมาก'?'risk-high':p.urgency==='ด่วน'?'risk-mid':'risk-low'}">${p.urgency}</span></td>
+  </tr>
+`).join('');
+
+// ===== CHARTS =====
+Chart.defaults.font.family = 'Sarabun, sans-serif';
+Chart.defaults.font.size = 12;
+
+// DM Control (Overview)
+new Chart(document.getElementById('chartDMControl'), {
+  type: 'doughnut',
+  data: {
+    labels: ['HbA1c < 7% (ดีมาก)', 'HbA1c 7–9% (พอใช้)', 'HbA1c ≥ 9% (ไม่ดี)'],
+    datasets: [{
+      data: [102, 40, 47],
+      backgroundColor: ['#43A047','#FFA726','#E53935'],
+      borderWidth: 3, borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+
+// HT Control (Overview)
+new Chart(document.getElementById('chartHTControl'), {
+  type: 'doughnut',
+  data: {
+    labels: ['BP < 140/90 (ดี)', 'BP 140–160 (พอใช้)', 'BP ≥ 160 (ไม่ดี)'],
+    datasets: [{
+      data: [134, 43, 38],
+      backgroundColor: ['#5E35B1','#AB47BC','#E53935'],
+      borderWidth: 3, borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+
+// Trend DM
+new Chart(document.getElementById('chartTrendDM'), {
+  type: 'line',
+  data: {
+    labels: ['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.'],
+    datasets: [{
+      label: 'HbA1c เฉลี่ย (%)',
+      data: [8.4, 8.2, 8.0, 7.9, 7.8, 7.6, 7.5, 7.4],
+      borderColor: '#E65100', backgroundColor: 'rgba(230,81,0,0.1)',
+      borderWidth: 2.5, pointRadius: 4, fill: true, tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { min: 6.5, max: 9.5, grid: { color: '#ECEFF1' } } },
+    plugins: { legend: { position: 'top' } }
+  }
+});
+
+// Trend HT
+new Chart(document.getElementById('chartTrendHT'), {
+  type: 'line',
+  data: {
+    labels: ['ต.ค.','พ.ย.','ธ.ค.','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.'],
+    datasets: [{
+      label: 'Systolic เฉลี่ย (mmHg)',
+      data: [148, 147, 145, 144, 142, 140, 139, 138],
+      borderColor: '#6A1B9A', backgroundColor: 'rgba(106,27,154,0.1)',
+      borderWidth: 2.5, pointRadius: 4, fill: true, tension: 0.3
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { min: 125, max: 165, grid: { color: '#ECEFF1' } } },
+    plugins: { legend: { position: 'top' } }
+  }
+});
+
+// DM HbA1c distribution
+new Chart(document.getElementById('chartDMHbA1c'), {
+  type: 'bar',
+  data: {
+    labels: ['< 5.7%','5.7–6.4%','6.5–6.9%','7.0–7.9%','8.0–8.9%','9.0–9.9%','≥ 10%'],
+    datasets: [{
+      label: 'จำนวนผู้ป่วย',
+      data: [5, 12, 85, 40, 20, 15, 12],
+      backgroundColor: ['#43A047','#66BB6A','#A5D6A7','#FFA726','#FB8C00','#E53935','#B71C1C'],
+      borderRadius: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, grid: { color: '#ECEFF1' } } }
+  }
+});
+
+// DM Complications
+new Chart(document.getElementById('chartDMComp'), {
+  type: 'bar',
+  data: {
+    labels: ['โรคไต (DKD)','จอประสาทตา','แผลเท้า','หัวใจ','หลอดเลือดสมอง'],
+    datasets: [{
+      label: 'จำนวนราย',
+      data: [18, 12, 7, 5, 3],
+      backgroundColor: ['#EF5350','#AB47BC','#FF7043','#EC407A','#5C6BC0'],
+      borderRadius: 5
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { x: { beginAtZero: true, grid: { color: '#ECEFF1' } } }
+  }
+});
+
+// HT BP distribution
+new Chart(document.getElementById('chartHTBP'), {
+  type: 'bar',
+  data: {
+    labels: ['< 120','120–129','130–139','140–149','150–159','160–169','170–179','≥ 180'],
+    datasets: [{
+      label: 'จำนวนผู้ป่วย',
+      data: [8, 22, 42, 30, 13, 18, 12, 8],
+      backgroundColor: ['#1E88E5','#43A047','#43A047','#FFA726','#FB8C00','#E53935','#C62828','#B71C1C'],
+      borderRadius: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, grid: { color: '#ECEFF1' } } }
+  }
+});
+
+// HT Medications
+new Chart(document.getElementById('chartHTMed'), {
+  type: 'doughnut',
+  data: {
+    labels: ['1 ชนิด', '2 ชนิด', '3 ชนิด', '≥ 4 ชนิด'],
+    datasets: [{
+      data: [88, 74, 38, 15],
+      backgroundColor: ['#42A5F5','#AB47BC','#E53935','#6D4C41'],
+      borderWidth: 3, borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { padding: 12 } } }
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>วิเคราะห์แนวโน้มกลุ่มเสี่ยง NCD สองคอน ปีงบ 2568</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--primary:#1a73e8;--success:#34a853;--warning:#fbbc04;--danger:#ea4335;--purple:#9c27b0;--orange:#ff6d00;--info:#17a2b8;--bg:#f0f4f8;--card:#fff;--border:#e0e0e0;--text:#202124;--muted:#666}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:linear-gradient(135deg,#1a237e,#1a73e8);color:#fff;padding:18px 24px}
+header h1{font-size:19px;font-weight:700}
+header .sub{font-size:13px;opacity:.85;margin-top:4px}
+.tabs{display:flex;background:#1557b0;overflow-x:auto}
+.tab{padding:12px 20px;color:rgba(255,255,255,.75);cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;border-bottom:3px solid transparent;transition:.2s}
+.tab.active{color:#fff;border-bottom-color:#fbbc04;background:rgba(255,255,255,.1)}
+.tab:hover:not(.active){color:#fff;background:rgba(255,255,255,.07)}
+.content{display:none;padding:20px;max-width:1400px;margin:0 auto}
+.content.active{display:block}
+.section{font-size:17px;font-weight:700;color:#1a237e;margin-bottom:16px;padding-bottom:8px;border-bottom:3px solid #1a73e8;display:flex;align-items:center;gap:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.09);border-top:4px solid}
+.kpi.blue{border-color:var(--primary)}.kpi.green{border-color:var(--success)}
+.kpi.yellow{border-color:var(--warning)}.kpi.red{border-color:var(--danger)}
+.kpi.purple{border-color:var(--purple)}.kpi.orange{border-color:var(--orange)}
+.kpi-lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi-val{font-size:30px;font-weight:800;line-height:1.2;margin:4px 0}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.09)}
+.card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:#333;padding-bottom:6px;border-bottom:1px solid #eee}
+canvas{max-height:270px}
+.insight-box{background:linear-gradient(135deg,#e3f2fd,#e8f5e9);border-radius:12px;padding:16px;margin-bottom:16px;border-left:4px solid var(--primary)}
+.insight-box h3{font-size:14px;font-weight:700;color:#1a237e;margin-bottom:10px}
+.insight-box ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.insight-box li{font-size:13px;padding-left:20px;position:relative;line-height:1.5}
+.insight-box li::before{content:"▶";position:absolute;left:0;color:var(--primary);font-size:10px;top:3px}
+.funnel{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.funnel-row{display:flex;align-items:center;gap:10px}
+.funnel-bar-wrap{flex:1;background:#eee;border-radius:4px;height:32px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:10px;font-weight:600;font-size:13px;color:#fff}
+.funnel-label{width:130px;font-size:12px;font-weight:600;text-align:right}
+.funnel-pct{width:50px;font-size:12px;color:var(--muted)}
+.arrow-down{text-align:center;font-size:18px;color:#ccc;line-height:1}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.bg-green{background:#e8f5e9;color:#2e7d32}.bg-yellow{background:#fff8e1;color:#f57f17}
+.bg-red{background:#fce4ec;color:#c62828}.bg-blue{background:#e3f2fd;color:#1565c0}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fa;padding:8px 10px;text-align:left;font-weight:600;border-bottom:2px solid #ddd;font-size:12px;color:#555}
+td{padding:7px 10px;border-bottom:1px solid #f0f0f0}
+tr:hover{background:#fafafa}
+.alert-box{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px}
+.alert-box strong{color:#856404}
+.success-box{background:#d4edda;border:1px solid #28a745;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px}
+.success-box strong{color:#155724}
+.gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.gap-card{border-radius:8px;padding:12px;border-left:3px solid}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}.gap-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 วิเคราะห์แนวโน้มกลุ่มเสี่ยง NCD รพ.สต.บ้านสองคอน</h1>
+  <div class="sub">ปีงบประมาณ 2568 (ต.ค.2568 – พ.ค.2569) | เบาหวาน + ความดันโลหิตสูง | วิเคราะห์ ณ 22 พ.ค. 2568</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0)">📈 แนวโน้มรายเดือน</div>
+  <div class="tab" onclick="showTab(1)">🔄 เสี่ยง → ป่วย (Funnel)</div>
+  <div class="tab" onclick="showTab(2)">🏘️ เปรียบเทียบรายหมู่บ้าน</div>
+  <div class="tab" onclick="showTab(3)">👥 กลุ่มอายุ & ปัจจัยเสี่ยง</div>
+</div>
+
+<!-- TAB 0 -->
+<div class="content active" id="tab0">
+  <div class="section">📈 แนวโน้มการคัดกรองรายเดือน ปีงบประมาณ 2568</div>
+  <div class="insight-box">
+    <h3>💡 สรุปประเด็นสำคัญจากแนวโน้มรายเดือน</h3>
+    <ul>
+      <li>ช่วง <strong>ต.ค.–ธ.ค. 2568</strong> เป็นช่วง mass screening หลัก — คัดกรองรวม 5,630 ราย คิดเป็น 65% ของทั้งปี</li>
+      <li>เดือน <strong>พ.ย.68 คัดกรองสูงสุด</strong> 3,665 ราย (DM) / 3,370 ราย (HT) — อัตราเสี่ยง DM 42%, HT 56%</li>
+      <li>เดือน <strong>มี.ค.–พ.ค.69</strong> จำนวนน้อยลงแต่ <strong style="color:#c62828">อัตราพบกลุ่มเสี่ยงสูงถึง 50–70%</strong> — กลุ่มนี้มักเป็นคน "ที่ยังไม่ได้รับการคัดกรอง" ซึ่งมีความเสี่ยงสูงกว่าค่าเฉลี่ย</li>
+      <li>อัตราสงสัยเบาหวาน (risk=2) เดือน <strong style="color:#c62828">พ.ค.69 สูงถึง 50%</strong> (15/30 ราย) — ต้องเร่งติดตาม</li>
+      <li><strong style="color:#2e7d32">ครอบคลุมประชากรเป้าหมาย DM ประมาณ 95-96%</strong> — ผลงานคัดกรองดีเยี่ยม</li>
+    </ul>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi blue"><div class="kpi-lbl">คัดกรองเบาหวาน รวม</div><div class="kpi-val">1,726</div><div class="kpi-sub">ราย ปีงบ 2568</div></div>
+    <div class="kpi yellow"><div class="kpi-lbl">เสี่ยง DM สูงสุด/เดือน</div><div class="kpi-val">1,400</div><div class="kpi-sub">ราย (พ.ย.68) อัตรา 38.2%</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย DM สูงสุด/เดือน</div><div class="kpi-val">50%</div><div class="kpi-sub">พ.ค.69 (15/30 ราย)</div></div>
+    <div class="kpi blue"><div class="kpi-lbl">คัดกรองความดัน รวม</div><div class="kpi-val">1,628</div><div class="kpi-sub">ราย ปีงบ 2568</div></div>
+    <div class="kpi yellow"><div class="kpi-lbl">เสี่ยง HT สูงสุด/เดือน</div><div class="kpi-val">1,145</div><div class="kpi-sub">ราย (พ.ย.68) อัตรา 34%</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย HT สูงสุด/เดือน</div><div class="kpi-val">22.7%</div><div class="kpi-sub">เม.ย.69 (25/110 ราย)</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>🩸 จำนวนคัดกรองเบาหวาน + สัดส่วนรายเดือน</h3><canvas id="dmMonthlyBar"></canvas></div>
+    <div class="card"><h3>📊 อัตราพบกลุ่มเสี่ยง DM รายเดือน (%)</h3><canvas id="dmMonthlyRate"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>💊 จำนวนคัดกรองความดัน + สัดส่วนรายเดือน</h3><canvas id="htMonthlyBar"></canvas></div>
+    <div class="card"><h3>📊 อัตราพบกลุ่มเสี่ยง HT รายเดือน (%)</h3><canvas id="htMonthlyRate"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>📋 ตารางสรุปรายเดือน</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>เดือน</th><th>DM รวม</th><th>DM ปกติ</th><th>DM เสี่ยง</th><th>DM สงสัย</th><th>DM %เสี่ยง</th><th>HT รวม</th><th>HT ปกติ</th><th>HT เสี่ยง</th><th>HT สงสัย</th><th>HT %เสี่ยง</th></tr></thead>
+      <tbody><tr>
+  <td><strong>ต.ค.68</strong></td>
+  <td>880</td><td>460</td>
+  <td style="color:#e65100;font-weight:600">355</td>
+  <td style="color:#c62828;font-weight:600">65</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">47.7%</span></td>
+  <td>845</td><td>460</td>
+  <td style="color:#e65100;font-weight:600">250</td>
+  <td style="color:#c62828;font-weight:600">135</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">45.6%</span></td>
+</tr>
+<tr>
+  <td><strong>พ.ย.68</strong></td>
+  <td>3,665</td><td>2,125</td>
+  <td style="color:#e65100;font-weight:600">1,400</td>
+  <td style="color:#c62828;font-weight:600">140</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">42.0%</span></td>
+  <td>3,370</td><td>1,480</td>
+  <td style="color:#e65100;font-weight:600">1,145</td>
+  <td style="color:#c62828;font-weight:600">705</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">56.1%</span></td>
+</tr>
+<tr>
+  <td><strong>ธ.ค.68</strong></td>
+  <td>1,085</td><td>645</td>
+  <td style="color:#e65100;font-weight:600">345</td>
+  <td style="color:#c62828;font-weight:600">95</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">40.6%</span></td>
+  <td>1,075</td><td>555</td>
+  <td style="color:#e65100;font-weight:600">320</td>
+  <td style="color:#c62828;font-weight:600">200</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">48.4%</span></td>
+</tr>
+<tr>
+  <td><strong>ม.ค.69</strong></td>
+  <td>2,240</td><td>2,090</td>
+  <td style="color:#e65100;font-weight:600">105</td>
+  <td style="color:#c62828;font-weight:600">45</td>
+  <td><span style="background:#e8f5e9;padding:2px 6px;border-radius:4px;font-weight:700">6.7%</span></td>
+  <td>2,160</td><td>1,740</td>
+  <td style="color:#e65100;font-weight:600">360</td>
+  <td style="color:#c62828;font-weight:600">55</td>
+  <td><span style="background:#e8f5e9;padding:2px 6px;border-radius:4px;font-weight:700">19.4%</span></td>
+</tr>
+<tr>
+  <td><strong>ก.พ.69</strong></td>
+  <td>125</td><td>55</td>
+  <td style="color:#e65100;font-weight:600">45</td>
+  <td style="color:#c62828;font-weight:600">25</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">56.0%</span></td>
+  <td>80</td><td>40</td>
+  <td style="color:#e65100;font-weight:600">25</td>
+  <td style="color:#c62828;font-weight:600">10</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">50.0%</span></td>
+</tr>
+<tr>
+  <td><strong>มี.ค.69</strong></td>
+  <td>85</td><td>25</td>
+  <td style="color:#e65100;font-weight:600">30</td>
+  <td style="color:#c62828;font-weight:600">30</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">70.6%</span></td>
+  <td>80</td><td>45</td>
+  <td style="color:#e65100;font-weight:600">25</td>
+  <td style="color:#c62828;font-weight:600">10</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">43.8%</span></td>
+</tr>
+<tr>
+  <td><strong>เม.ย.69</strong></td>
+  <td>75</td><td>35</td>
+  <td style="color:#e65100;font-weight:600">25</td>
+  <td style="color:#c62828;font-weight:600">15</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">53.3%</span></td>
+  <td>110</td><td>70</td>
+  <td style="color:#e65100;font-weight:600">15</td>
+  <td style="color:#c62828;font-weight:600">25</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">36.4%</span></td>
+</tr>
+<tr>
+  <td><strong>พ.ค.69</strong></td>
+  <td>30</td><td>10</td>
+  <td style="color:#e65100;font-weight:600">5</td>
+  <td style="color:#c62828;font-weight:600">15</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">66.7%</span></td>
+  <td>25</td><td>20</td>
+  <td style="color:#e65100;font-weight:600">5</td>
+  <td style="color:#c62828;font-weight:600">0</td>
+  <td><span style="background:#e8f5e9;padding:2px 6px;border-radius:4px;font-weight:700">20.0%</span></td>
+</tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- TAB 1 -->
+<div class="content" id="tab1">
+  <div class="section">🔄 การเปลี่ยนสถานะ: กลุ่มเสี่ยง → กลุ่มป่วย</div>
+  <div class="alert-box"><strong>⚠️ ประเด็นเร่งด่วน:</strong> จากกลุ่มสงสัยเบาหวาน 86 ราย พบว่า <strong>38 ราย (44.2%)</strong> อยู่ในทะเบียนผู้ป่วยเบาหวานแล้ว — เหลืออีก <strong>48 ราย ที่ยังไม่ได้รับการวินิจฉัยหรือขึ้นทะเบียน</strong> ต้องติดตามเร่งด่วน!</div>
+  <div class="success-box"><strong>✅ ด้านความดัน:</strong> ระบบการติดตามทำงานได้ดี — ผู้ป่วยความดัน 553 ราย ควบคุมได้ถึง <strong>69.8%</strong> (386/553)</div>
+  <div class="kpi-grid">
+    <div class="kpi blue"><div class="kpi-lbl">กลุ่มเสี่ยง DM รวม</div><div class="kpi-val">548</div><div class="kpi-sub">เสี่ยง 462 + สงสัย 86 ราย</div></div>
+    <div class="kpi purple"><div class="kpi-lbl">ผู้ป่วย DM ทะเบียน</div><div class="kpi-val">358</div><div class="kpi-sub">20.7% ของผู้คัดกรอง</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย DM ยังไม่ขึ้นทะเบียน</div><div class="kpi-val">48</div><div class="kpi-sub">จาก 86 ราย — ต้องติดตาม!</div></div>
+    <div class="kpi blue"><div class="kpi-lbl">กลุ่มเสี่ยง HT รวม</div><div class="kpi-val">667</div><div class="kpi-sub">เสี่ยง 429 + สงสัย 238 ราย</div></div>
+    <div class="kpi purple"><div class="kpi-lbl">ผู้ป่วย HT ทะเบียน</div><div class="kpi-val">553</div><div class="kpi-sub">34.0% ของผู้คัดกรอง</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย HT ยังไม่ขึ้นทะเบียน</div><div class="kpi-val">200</div><div class="kpi-sub">จาก 238 ราย — ต้องติดตาม!</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>🔽 Funnel: กลุ่มเบาหวาน (DM)</h3>
+      <div class="funnel">
+        <div class="funnel-row"><div class="funnel-label">คัดกรองทั้งหมด</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#1a73e8">1,726 ราย</div></div><div class="funnel-pct">100%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">กลุ่มเสี่ยง</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:31.8%;background:#fbbc04">548 ราย</div></div><div class="funnel-pct">31.8%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">สงสัยเบาหวาน</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:5%;background:#ff7043">86 ราย</div></div><div class="funnel-pct">5.0%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">ผู้ป่วยในทะเบียน</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:20.7%;background:#ea4335">358 ราย</div></div><div class="funnel-pct">20.7%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">ควบคุมได้</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:6.9%;background:#34a853">120 ราย</div></div><div class="funnel-pct">6.9%</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:8px;font-size:12px">
+        <strong style="color:#e65100">⚠️ ช่องว่าง:</strong> สงสัยเบาหวาน 48 ราย (55.8%) ยังไม่ได้รับการวินิจฉัย
+      </div>
+    </div>
+    <div class="card">
+      <h3>🔽 Funnel: กลุ่มความดัน (HT)</h3>
+      <div class="funnel">
+        <div class="funnel-row"><div class="funnel-label">คัดกรองทั้งหมด</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#1a73e8">1,628 ราย</div></div><div class="funnel-pct">100%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">กลุ่มเสี่ยง</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:41.0%;background:#fbbc04">667 ราย</div></div><div class="funnel-pct">41.0%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">สงสัยความดัน</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:14.6%;background:#ff7043">238 ราย</div></div><div class="funnel-pct">14.6%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">ผู้ป่วยในทะเบียน</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:34.0%;background:#ea4335">553 ราย</div></div><div class="funnel-pct">34.0%</div></div>
+        <div class="arrow-down">↓</div>
+        <div class="funnel-row"><div class="funnel-label">ควบคุมได้</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:23.7%;background:#34a853">386 ราย</div></div><div class="funnel-pct">23.7%</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:8px;font-size:12px">
+        <strong style="color:#e65100">⚠️ ช่องว่าง:</strong> สงสัยความดัน 200 ราย (84.0%) ยังไม่ได้รับการวินิจฉัย
+      </div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>📊 การกระจาย HbA1c ผู้ป่วยเบาหวาน 358 ราย</h3><canvas id="hba1cFunnel"></canvas><div style="margin-top:10px;padding:8px;background:#ffebee;border-radius:6px;font-size:12px"><strong style="color:#c62828">HbA1c ≥9%: 97 ราย (27.1%)</strong> — ควรพิจารณาปรับยาหรือ refer รพ.แม่ข่าย</div></div>
+    <div class="card"><h3>📊 การกระจาย SBP ผู้ป่วยความดัน 553 ราย</h3><canvas id="bpFunnel"></canvas><div style="margin-top:10px;padding:8px;background:#e3f2fd;border-radius:6px;font-size:12px"><strong style="color:#1565c0">SBP ≥160 mmHg: 29 ราย (5.2%)</strong> — ต้องติดตามเร่งด่วน</div></div>
+  </div>
+  <div class="card">
+    <h3>📋 สรุปช่องว่างการดูแลที่ต้องแก้ไข</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>กลุ่ม</th><th>จำนวน</th><th>ขึ้นทะเบียน</th><th>ยังไม่ขึ้นทะเบียน</th><th>%ยังไม่ขึ้นทะเบียน</th><th>ระดับเร่งด่วน</th></tr></thead>
+      <tbody>
+        <tr><td>สงสัยเบาหวาน (risk=2)</td><td>86</td><td><span class="badge bg-blue">38</span></td><td><span class="badge bg-red">48</span></td><td style="font-weight:700;color:#c62828">55.8%</td><td><span class="badge bg-red">🔴 เร่งด่วนสูง</span></td></tr>
+        <tr><td>กลุ่มเสี่ยงเบาหวาน (risk=1)</td><td>462</td><td><span class="badge bg-blue">26</span></td><td><span class="badge bg-yellow">436</span></td><td style="color:#e65100">94.4%</td><td><span class="badge bg-yellow">🟡 ติดตามต่อเนื่อง</span></td></tr>
+        <tr><td>สงสัยความดัน (risk≥2)</td><td>238</td><td><span class="badge bg-blue">38</span></td><td><span class="badge bg-red">200</span></td><td style="font-weight:700;color:#c62828">84.0%</td><td><span class="badge bg-red">🔴 เร่งด่วนสูง</span></td></tr>
+        <tr><td>กลุ่มเสี่ยงความดัน (risk=1)</td><td>429</td><td><span class="badge bg-blue">48</span></td><td><span class="badge bg-yellow">381</span></td><td style="color:#e65100">88.8%</td><td><span class="badge bg-yellow">🟡 ติดตามต่อเนื่อง</span></td></tr>
+        <tr style="background:#f1f8ff;font-weight:700"><td>รวมทั้งหมด</td><td>1,215</td><td>150</td><td>1,065</td><td style="color:#c62828">87.7%</td><td>-</td></tr>
+      </tbody>
+    </table></div>
+    <p style="font-size:12px;color:#888;margin-top:8px">*ผู้ป่วยบางรายอาจรับการรักษาที่รพ.แม่ข่ายและยังไม่ได้ส่งข้อมูลกลับ</p>
+  </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="content" id="tab2">
+  <div class="section">🏘️ เปรียบเทียบกลุ่มเสี่ยงและกลุ่มป่วยรายหมู่บ้าน</div>
+  <div class="grid2">
+    <div class="card"><h3>🩸 ภาระโรคเบาหวานรายหมู่บ้าน</h3><canvas id="dmVillCombo"></canvas></div>
+    <div class="card"><h3>💊 ภาระโรคความดันรายหมู่บ้าน</h3><canvas id="htVillCombo"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>📋 ตารางเปรียบเทียบรายหมู่บ้าน</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th rowspan="2">หมู่บ้าน</th><th colspan="4" style="text-align:center;border-left:2px solid #ddd">เบาหวาน (DM)</th><th colspan="4" style="text-align:center;border-left:2px solid #ddd">ความดัน (HT)</th></tr>
+      <tr><th style="border-left:2px solid #ddd">คัดกรอง</th><th>เสี่ยง</th><th>สงสัย</th><th>ผู้ป่วย</th><th style="border-left:2px solid #ddd">คัดกรอง</th><th>เสี่ยง</th><th>สงสัย</th><th>ผู้ป่วย</th></tr></thead>
+      <tbody><tr>
+  <td><strong>หมู่ 1</strong></td>
+  <td style="border-left:2px solid #eee">267</td>
+  <td><span style="color:#e65100;font-weight:600">74 (28%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">11</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">605</span></td>
+  <td style="border-left:2px solid #eee">247</td>
+  <td><span style="color:#e65100;font-weight:600">86 (35%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">32</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">430</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 2</strong></td>
+  <td style="border-left:2px solid #eee">181</td>
+  <td><span style="color:#c62828;font-weight:600">65 (36%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">7</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">385</span></td>
+  <td style="border-left:2px solid #eee">167</td>
+  <td><span style="color:#e65100;font-weight:600">59 (35%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">19</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">280</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 3</strong></td>
+  <td style="border-left:2px solid #eee">208</td>
+  <td><span style="color:#e65100;font-weight:600">71 (34%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">10</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">528</span></td>
+  <td style="border-left:2px solid #eee">196</td>
+  <td><span style="color:#c62828;font-weight:600">96 (49%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">46</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">335</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 4</strong></td>
+  <td style="border-left:2px solid #eee">210</td>
+  <td><span style="color:#c62828;font-weight:600">77 (37%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">11</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">462</span></td>
+  <td style="border-left:2px solid #eee">198</td>
+  <td><span style="color:#e65100;font-weight:600">81 (41%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">27</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">350</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 5</strong></td>
+  <td style="border-left:2px solid #eee">183</td>
+  <td><span style="color:#c62828;font-weight:600">77 (42%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">12</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">462</span></td>
+  <td style="border-left:2px solid #eee">173</td>
+  <td><span style="color:#c62828;font-weight:600">92 (53%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">36</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">355</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 6</strong></td>
+  <td style="border-left:2px solid #eee">164</td>
+  <td><span style="color:#e65100;font-weight:600">43 (26%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">8</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">407</span></td>
+  <td style="border-left:2px solid #eee">163</td>
+  <td><span style="color:#e65100;font-weight:600">64 (39%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">20</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">210</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 7</strong></td>
+  <td style="border-left:2px solid #eee">217</td>
+  <td><span style="color:#e65100;font-weight:600">59 (27%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">17</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">429</span></td>
+  <td style="border-left:2px solid #eee">207</td>
+  <td><span style="color:#e65100;font-weight:600">79 (38%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">25</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">280</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 8</strong></td>
+  <td style="border-left:2px solid #eee">167</td>
+  <td><span style="color:#e65100;font-weight:600">53 (32%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">6</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">407</span></td>
+  <td style="border-left:2px solid #eee">149</td>
+  <td><span style="color:#c62828;font-weight:600">70 (47%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">25</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">370</span></td>
+</tr>
+<tr>
+  <td><strong>หมู่ 9</strong></td>
+  <td style="border-left:2px solid #eee">129</td>
+  <td><span style="color:#e65100;font-weight:600">29 (22%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">4</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">253</span></td>
+  <td style="border-left:2px solid #eee">128</td>
+  <td><span style="color:#e65100;font-weight:600">40 (31%)</span></td>
+  <td><span style="color:#c62828;font-weight:600">8</span></td>
+  <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">155</span></td>
+</tr></tbody></table></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🗺️ หมู่บ้านที่ต้องเฝ้าระวังพิเศษ</h3>
+    <div class="gap-grid">
+      <div class="gap-card" style="background:#fff3e0;border-color:#ff6d00"><strong style="color:#e65100">🔶 DM: หมู่ 4 และหมู่ 5</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 4: เสี่ยง 77 ราย (36.7%), หมู่ 5: เสี่ยง 77 ราย (42.1%) — สูงสุดในตำบล</p></div>
+      <div class="gap-card" style="background:#fce4ec;border-color:#e91e63"><strong style="color:#c62828">🔴 HT: หมู่ 3 และหมู่ 5</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 3: สงสัยความดัน 46 ราย (23.5%), หมู่ 5: 36 ราย (20.8%) — สูงสุดในตำบล</p></div>
+      <div class="gap-card" style="background:#f3e5f5;border-color:#9c27b0"><strong style="color:#6a1b9a">🟣 DM: หมู่ 7 สงสัยสูงสุด</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 7: สงสัยเบาหวาน 17 ราย — สัดส่วนสูงสุดในตำบล (7.8%)</p></div>
+      <div class="gap-card" style="background:#e8f5e9;border-color:#34a853"><strong style="color:#2e7d32">✅ หมู่ 6 และหมู่ 9 เสี่ยงต่ำสุด</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 6: DM เสี่ยง 26.2%, หมู่ 9: 22.5% — ควรศึกษาปัจจัยเพื่อขยายผล</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3 -->
+<div class="content" id="tab3">
+  <div class="section">👥 กลุ่มอายุ &amp; ปัจจัยเสี่ยง</div>
+  <div class="grid2">
+    <div class="card"><h3>🩸 กลุ่มอายุ vs ผลคัดกรองเบาหวาน</h3><canvas id="dmAgeDetail"></canvas></div>
+    <div class="card"><h3>💊 กลุ่มอายุ vs ผลคัดกรองความดัน</h3><canvas id="htAgeDetail"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>📊 อัตราเสี่ยง DM ตามกลุ่มอายุ (%)</h3><canvas id="dmAgeRate"></canvas></div>
+    <div class="card"><h3>📊 อัตราเสี่ยง HT ตามกลุ่มอายุ (%)</h3><canvas id="htAgeRate"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>📋 ตารางวิเคราะห์รายกลุ่มอายุ</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>กลุ่มอายุ</th><th>DM รวม</th><th>DM เสี่ยง+สงสัย</th><th>DM อัตรา</th><th>DM สงสัย</th><th>HT รวม</th><th>HT เสี่ยง+สงสัย</th><th>HT อัตรา</th><th>HT สงสัย</th></tr></thead>
+      <tbody><tr>
+  <td><strong>35-44</strong></td>
+  <td>289</td>
+  <td style="font-weight:600;color:#e65100">65</td>
+  <td><span style="background:#e8f5e9;padding:2px 6px;border-radius:4px;font-weight:700">22.5%</span></td>
+  <td style="color:#c62828;font-weight:600">11</td>
+  <td>291</td>
+  <td style="font-weight:600;color:#e65100">87</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">29.9%</span></td>
+  <td style="color:#c62828;font-weight:600">26</td>
+</tr>
+<tr>
+  <td><strong>45-54</strong></td>
+  <td>440</td>
+  <td style="font-weight:600;color:#e65100">145</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">33.0%</span></td>
+  <td style="color:#c62828;font-weight:600">20</td>
+  <td>436</td>
+  <td style="font-weight:600;color:#e65100">182</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">41.7%</span></td>
+  <td style="color:#c62828;font-weight:600">57</td>
+</tr>
+<tr>
+  <td><strong>55-64</strong></td>
+  <td>484</td>
+  <td style="font-weight:600;color:#e65100">156</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">32.2%</span></td>
+  <td style="color:#c62828;font-weight:600">24</td>
+  <td>457</td>
+  <td style="font-weight:600;color:#e65100">204</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">44.6%</span></td>
+  <td style="color:#c62828;font-weight:600">71</td>
+</tr>
+<tr>
+  <td><strong>65-74</strong></td>
+  <td>340</td>
+  <td style="font-weight:600;color:#e65100">128</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">37.6%</span></td>
+  <td style="color:#c62828;font-weight:600">20</td>
+  <td>300</td>
+  <td style="font-weight:600;color:#e65100">140</td>
+  <td><span style="background:#ffcdd2;padding:2px 6px;border-radius:4px;font-weight:700">46.7%</span></td>
+  <td style="color:#c62828;font-weight:600">64</td>
+</tr>
+<tr>
+  <td><strong>75+</strong></td>
+  <td>173</td>
+  <td style="font-weight:600;color:#e65100">54</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">31.2%</span></td>
+  <td style="color:#c62828;font-weight:600">11</td>
+  <td>144</td>
+  <td style="font-weight:600;color:#e65100">54</td>
+  <td><span style="background:#fff9c4;padding:2px 6px;border-radius:4px;font-weight:700">37.5%</span></td>
+  <td style="color:#c62828;font-weight:600">20</td>
+</tr></tbody></table></div>
+  </div>
+  <div class="insight-box" style="margin-top:16px">
+    <h3>🔍 ข้อสรุปเชิงวิชาการ (Evidence-Based)</h3>
+    <ul>
+      <li>กลุ่ม <strong>55-64 ปี</strong> มีจำนวนสูงสุด (DM 484, HT 457 ราย) และความเสี่ยงสะสมสูง — เป็นกลุ่มเป้าหมายหลักในการแทรกแซง</li>
+      <li>กลุ่ม <strong>65-74 ปี</strong> อัตราเสี่ยง HT 46.7% — สอดคล้อง JNC8 ที่ระบุ อายุ>65 ปี มีความเสี่ยง HT เพิ่มขึ้น 3.5 เท่า</li>
+      <li>กลุ่ม <strong>35-44 ปี</strong> เสี่ยง DM 22.5% — บ่งชี้ความเสี่ยงในวัยทำงาน ควรเพิ่มโปรแกรม lifestyle modification</li>
+      <li>อัตราเสี่ยง DM เพิ่มตามอายุ: 22.5% → 33.0% → 32.2% → 37.6% (<strong style="color:#c62828">เพิ่มขึ้น 67%</strong> ตั้งแต่ 35-44 ถึง 65-74 ปี)</li>
+      <li>ตาม ADA 2024: ผู้ที่ FPG 100-125 mg/dL มีความเสี่ยง T2DM 11-29%/ปี หากไม่แทรกแซง — ต้องติดตาม <strong>462 ราย</strong> เร่งด่วน</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const DM_LABELS = ["ต.ค.68", "พ.ย.68", "ธ.ค.68", "ม.ค.69", "ก.พ.69", "มี.ค.69", "เม.ย.69", "พ.ค.69"];
+const DM_R0 = [460, 2125, 645, 2090, 55, 25, 35, 10];
+const DM_R1 = [355, 1400, 345, 105, 45, 30, 25, 5];
+const DM_R2 = [65, 140, 95, 45, 25, 30, 15, 15];
+const DM_PCT = [47.7, 42.0, 40.6, 6.7, 56.0, 70.6, 53.3, 66.7];
+const DM_PCT_S = [7.4, 3.8, 8.8, 2.0, 20.0, 35.3, 20.0, 50.0];
+const HT_LABELS = ["ต.ค.68", "พ.ย.68", "ธ.ค.68", "ม.ค.69", "ก.พ.69", "มี.ค.69", "เม.ย.69", "พ.ค.69"];
+const HT_R0 = [460, 1480, 555, 1740, 40, 45, 70, 20];
+const HT_R1 = [250, 1145, 320, 360, 25, 25, 15, 5];
+const HT_R2 = [135, 705, 200, 55, 10, 10, 25, 0];
+const HT_R3 = [0, 40, 0, 5, 5, 0, 0, 0];
+const HT_PCT = [45.6, 56.1, 48.4, 19.4, 50.0, 43.8, 36.4, 20.0];
+const HT_PCT_H = [16.0, 22.1, 18.6, 2.8, 18.8, 12.5, 22.7, 0.0];
+const VD = [{"village": 1, "dm_screen": 267, "dm_risk": 74, "dm_suspicious": 11, "dm_patients": 605, "ht_screen": 247, "ht_risk": 86, "ht_suspicious": 32, "ht_patients": 430}, {"village": 2, "dm_screen": 181, "dm_risk": 65, "dm_suspicious": 7, "dm_patients": 385, "ht_screen": 167, "ht_risk": 59, "ht_suspicious": 19, "ht_patients": 280}, {"village": 3, "dm_screen": 208, "dm_risk": 71, "dm_suspicious": 10, "dm_patients": 528, "ht_screen": 196, "ht_risk": 96, "ht_suspicious": 46, "ht_patients": 335}, {"village": 4, "dm_screen": 210, "dm_risk": 77, "dm_suspicious": 11, "dm_patients": 462, "ht_screen": 198, "ht_risk": 81, "ht_suspicious": 27, "ht_patients": 350}, {"village": 5, "dm_screen": 183, "dm_risk": 77, "dm_suspicious": 12, "dm_patients": 462, "ht_screen": 173, "ht_risk": 92, "ht_suspicious": 36, "ht_patients": 355}, {"village": 6, "dm_screen": 164, "dm_risk": 43, "dm_suspicious": 8, "dm_patients": 407, "ht_screen": 163, "ht_risk": 64, "ht_suspicious": 20, "ht_patients": 210}, {"village": 7, "dm_screen": 217, "dm_risk": 59, "dm_suspicious": 17, "dm_patients": 429, "ht_screen": 207, "ht_risk": 79, "ht_suspicious": 25, "ht_patients": 280}, {"village": 8, "dm_screen": 167, "dm_risk": 53, "dm_suspicious": 6, "dm_patients": 407, "ht_screen": 149, "ht_risk": 70, "ht_suspicious": 25, "ht_patients": 370}, {"village": 9, "dm_screen": 129, "dm_risk": 29, "dm_suspicious": 4, "dm_patients": 253, "ht_screen": 128, "ht_risk": 40, "ht_suspicious": 8, "ht_patients": 155}];
+const DM_AGE = {"35-44": {"total": 289, "r0": 224, "r1": 54, "r2": 11}, "45-54": {"total": 440, "r0": 295, "r1": 125, "r2": 20}, "55-64": {"total": 484, "r0": 328, "r1": 132, "r2": 24}, "65-74": {"total": 340, "r0": 212, "r1": 108, "r2": 20}, "75+": {"total": 173, "r0": 119, "r1": 43, "r2": 11}};
+const HT_AGE = {"35-44": {"total": 291, "r0": 204, "r1": 61, "r2": 26, "r3": 0}, "45-54": {"total": 436, "r0": 254, "r1": 125, "r2": 55, "r3": 2}, "55-64": {"total": 457, "r0": 253, "r1": 133, "r2": 70, "r3": 1}, "65-74": {"total": 300, "r0": 160, "r1": 76, "r2": 61, "r3": 3}, "75+": {"total": 144, "r0": 90, "r1": 34, "r2": 16, "r3": 4}};
+
+Chart.defaults.font.family="'Sarabun',sans-serif";
+Chart.defaults.font.size=12;
+
+const tabs=document.querySelectorAll('.content');
+const btns=document.querySelectorAll('.tab');
+let done={};
+function showTab(i){
+  tabs.forEach((c,j)=>c.classList.toggle('active',j===i));
+  btns.forEach((b,j)=>b.classList.toggle('active',j===i));
+  if(i===0&&!done[0]){b0();done[0]=1;}
+  if(i===1&&!done[1]){b1();done[1]=1;}
+  if(i===2&&!done[2]){b2();done[2]=1;}
+  if(i===3&&!done[3]){b3();done[3]=1;}
+}
+function mk(id,cfg){const el=document.getElementById(id);if(!el)return;return new Chart(el,cfg);}
+
+function b0(){
+  mk('dmMonthlyBar',{type:'bar',data:{labels:DM_LABELS,datasets:[
+    {label:'ปกติ',data:DM_R0,backgroundColor:'#34a853'},
+    {label:'เสี่ยง',data:DM_R1,backgroundColor:'#fbbc04'},
+    {label:'สงสัยเบาหวาน',data:DM_R2,backgroundColor:'#ea4335'}
+  ]},options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+  mk('dmMonthlyRate',{type:'line',data:{labels:DM_LABELS,datasets:[
+    {label:'% กลุ่มเสี่ยงทั้งหมด',data:DM_PCT,borderColor:'#fbbc04',backgroundColor:'rgba(251,188,4,.15)',fill:true,tension:.3,borderWidth:2,pointRadius:5},
+    {label:'% สงสัยเบาหวาน',data:DM_PCT_S,borderColor:'#ea4335',fill:false,tension:.3,borderWidth:2,pointRadius:5}
+  ]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:100}}}});
+  mk('htMonthlyBar',{type:'bar',data:{labels:HT_LABELS,datasets:[
+    {label:'ปกติ',data:HT_R0,backgroundColor:'#34a853'},
+    {label:'เสี่ยง',data:HT_R1,backgroundColor:'#fbbc04'},
+    {label:'สงสัยความดัน',data:HT_R2,backgroundColor:'#ff7043'},
+    {label:'วิกฤต',data:HT_R3,backgroundColor:'#9c27b0'}
+  ]},options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+  mk('htMonthlyRate',{type:'line',data:{labels:HT_LABELS,datasets:[
+    {label:'% กลุ่มเสี่ยงทั้งหมด',data:HT_PCT,borderColor:'#fbbc04',backgroundColor:'rgba(251,188,4,.15)',fill:true,tension:.3,borderWidth:2,pointRadius:5},
+    {label:'% สงสัยความดัน',data:HT_PCT_H,borderColor:'#ea4335',fill:false,tension:.3,borderWidth:2,pointRadius:5}
+  ]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:100}}}});
+}
+function b1(){
+  mk('hba1cFunnel',{type:'bar',data:{labels:['<7% (ดี)','7-8%','8-9%','≥9% (วิกฤต)'],
+    datasets:[{label:'ผู้ป่วย',data:[127,65,62,97],backgroundColor:['#34a853','#fbbc04','#ff7043','#ea4335']}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+  mk('bpFunnel',{type:'bar',data:{labels:['<130 (ดี)','130-140','140-160','≥160 (สูงมาก)'],
+    datasets:[{label:'ผู้ป่วย',data:[228,174,120,29],backgroundColor:['#34a853','#fbbc04','#ff7043','#ea4335']}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+}
+function b2(){
+  const vl=VD.map(v=>'หมู่ '+v.village);
+  mk('dmVillCombo',{type:'bar',data:{labels:vl,datasets:[
+    {label:'คัดกรอง',data:VD.map(v=>v.dm_screen),backgroundColor:'rgba(26,115,232,.25)'},
+    {label:'เสี่ยง',data:VD.map(v=>v.dm_risk),backgroundColor:'#fbbc04'},
+    {label:'สงสัย',data:VD.map(v=>v.dm_suspicious),backgroundColor:'#ea4335'},
+    {label:'ผู้ป่วย',data:VD.map(v=>v.dm_patients),backgroundColor:'#9c27b0'}
+  ]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
+  mk('htVillCombo',{type:'bar',data:{labels:vl,datasets:[
+    {label:'คัดกรอง',data:VD.map(v=>v.ht_screen),backgroundColor:'rgba(26,115,232,.25)'},
+    {label:'เสี่ยง',data:VD.map(v=>v.ht_risk),backgroundColor:'#fbbc04'},
+    {label:'สงสัย',data:VD.map(v=>v.ht_suspicious),backgroundColor:'#ea4335'},
+    {label:'ผู้ป่วย',data:VD.map(v=>v.ht_patients),backgroundColor:'#9c27b0'}
+  ]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
+}
+function b3(){
+  const ak=Object.keys(DM_AGE);
+  mk('dmAgeDetail',{type:'bar',data:{labels:ak,datasets:[
+    {label:'ปกติ',data:ak.map(k=>DM_AGE[k].r0),backgroundColor:'#34a853'},
+    {label:'เสี่ยง',data:ak.map(k=>DM_AGE[k].r1),backgroundColor:'#fbbc04'},
+    {label:'สงสัย',data:ak.map(k=>DM_AGE[k].r2),backgroundColor:'#ea4335'}
+  ]},options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+  mk('htAgeDetail',{type:'bar',data:{labels:ak,datasets:[
+    {label:'ปกติ',data:ak.map(k=>HT_AGE[k].r0),backgroundColor:'#34a853'},
+    {label:'เสี่ยง',data:ak.map(k=>HT_AGE[k].r1),backgroundColor:'#fbbc04'},
+    {label:'สงสัย',data:ak.map(k=>HT_AGE[k].r2||0),backgroundColor:'#ff7043'},
+    {label:'วิกฤต',data:ak.map(k=>HT_AGE[k].r3||0),backgroundColor:'#9c27b0'}
+  ]},options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+  mk('dmAgeRate',{type:'line',data:{labels:ak,datasets:[
+    {label:'% เสี่ยง+สงสัย DM',data:ak.map(k=>Math.round((DM_AGE[k].r1+DM_AGE[k].r2)/DM_AGE[k].total*100)),borderColor:'#fbbc04',backgroundColor:'rgba(251,188,4,.15)',fill:true,tension:.3,borderWidth:2,pointRadius:6},
+    {label:'% สงสัยเบาหวาน',data:ak.map(k=>Math.round(DM_AGE[k].r2/DM_AGE[k].total*100)),borderColor:'#ea4335',fill:false,tension:.3,borderWidth:2,pointRadius:6}
+  ]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:50}}}});
+  mk('htAgeRate',{type:'line',data:{labels:ak,datasets:[
+    {label:'% เสี่ยง+สงสัย HT',data:ak.map(k=>Math.round((HT_AGE[k].r1+(HT_AGE[k].r2||0)+(HT_AGE[k].r3||0))/HT_AGE[k].total*100)),borderColor:'#fbbc04',backgroundColor:'rgba(251,188,4,.15)',fill:true,tension:.3,borderWidth:2,pointRadius:6},
+    {label:'% สงสัยความดัน',data:ak.map(k=>Math.round(((HT_AGE[k].r2||0)+(HT_AGE[k].r3||0))/HT_AGE[k].total*100)),borderColor:'#ea4335',fill:false,tension:.3,borderWidth:2,pointRadius:6}
+  ]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:60}}}});
+}
+
+window.addEventListener('load',()=>{b0();done[0]=1;});
+</script>
+</body>
+</html>
