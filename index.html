@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>วิเคราะห์แนวโน้มกลุ่มเสี่ยง NCD สองคอน ปีงบ 2568</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--primary:#1a73e8;--success:#34a853;--warning:#fbbc04;--danger:#ea4335;--purple:#9c27b0;--orange:#ff6d00;--info:#17a2b8;--bg:#f0f4f8;--card:#fff;--border:#e0e0e0;--text:#202124;--muted:#666}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+header{background:linear-gradient(135deg,#1a237e,#1a73e8);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px}
+header h1{font-size:19px;font-weight:700}
+header .sub{font-size:13px;opacity:.85;margin-top:4px}
+.status-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:20px;padding:6px 12px;font-size:12px;white-space:nowrap}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#34a853;animation:pulse 2s infinite}
+.status-dot.loading{background:#fbbc04;animation:none}
+.status-dot.error{background:#ea4335;animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.tabs{display:flex;background:#1557b0;overflow-x:auto}
+.tab{padding:12px 20px;color:rgba(255,255,255,.75);cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;border-bottom:3px solid transparent;transition:.2s}
+.tab.active{color:#fff;border-bottom-color:#fbbc04;background:rgba(255,255,255,.1)}
+.tab:hover:not(.active){color:#fff;background:rgba(255,255,255,.07)}
+.content{display:none;padding:20px;max-width:1400px;margin:0 auto}
+.content.active{display:block}
+.section{font-size:17px;font-weight:700;color:#1a237e;margin-bottom:16px;padding-bottom:8px;border-bottom:3px solid #1a73e8;display:flex;align-items:center;gap:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.09);border-top:4px solid}
+.kpi.blue{border-color:var(--primary)}.kpi.green{border-color:var(--success)}
+.kpi.yellow{border-color:var(--warning)}.kpi.red{border-color:var(--danger)}
+.kpi.purple{border-color:var(--purple)}.kpi.orange{border-color:var(--orange)}
+.kpi-lbl{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi-val{font-size:30px;font-weight:800;line-height:1.2;margin:4px 0}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.09)}
+.card h3{font-size:14px;font-weight:600;margin-bottom:14px;color:#333;padding-bottom:6px;border-bottom:1px solid #eee}
+canvas{max-height:270px}
+.insight-box{background:linear-gradient(135deg,#e3f2fd,#e8f5e9);border-radius:12px;padding:16px;margin-bottom:16px;border-left:4px solid var(--primary)}
+.insight-box h3{font-size:14px;font-weight:700;color:#1a237e;margin-bottom:10px}
+.insight-box ul{list-style:none;display:flex;flex-direction:column;gap:7px}
+.insight-box li{font-size:13px;padding-left:20px;position:relative;line-height:1.5}
+.insight-box li::before{content:"▶";position:absolute;left:0;color:var(--primary);font-size:10px;top:3px}
+.funnel{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.funnel-row{display:flex;align-items:center;gap:10px}
+.funnel-bar-wrap{flex:1;background:#eee;border-radius:4px;height:32px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:10px;font-weight:600;font-size:13px;color:#fff}
+.funnel-label{width:130px;font-size:12px;font-weight:600;text-align:right}
+.funnel-pct{width:50px;font-size:12px;color:var(--muted)}
+.arrow-down{text-align:center;font-size:18px;color:#ccc;line-height:1}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.bg-green{background:#e8f5e9;color:#2e7d32}.bg-yellow{background:#fff8e1;color:#f57f17}
+.bg-red{background:#fce4ec;color:#c62828}.bg-blue{background:#e3f2fd;color:#1565c0}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8f9fa;padding:8px 10px;text-align:left;font-weight:600;border-bottom:2px solid #ddd;font-size:12px;color:#555}
+td{padding:7px 10px;border-bottom:1px solid #f0f0f0}
+tr:hover{background:#fafafa}
+.alert-box{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px}
+.alert-box strong{color:#856404}
+.success-box{background:#d4edda;border:1px solid #28a745;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px}
+.success-box strong{color:#155724}
+.gap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.gap-card{border-radius:8px;padding:12px;border-left:3px solid}
+.loading-overlay{display:flex;align-items:center;justify-content:center;padding:40px;color:#999;gap:10px;font-size:14px}
+.spinner{width:20px;height:20px;border:2px solid #ddd;border-top-color:#1a73e8;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.last-update{font-size:11px;color:#999;text-align:right;margin-bottom:8px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}.gap-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📊 วิเคราะห์แนวโน้มกลุ่มเสี่ยง NCD รพ.สต.บ้านสองคอน</h1>
+    <div class="sub">ปีงบประมาณ 2568 (ต.ค.2568 – พ.ค.2569) | เบาหวาน + ความดันโลหิตสูง</div>
+  </div>
+  <div class="status-badge" id="statusBadge">
+    <div class="status-dot loading" id="statusDot"></div>
+    <span id="statusText">กำลังโหลดข้อมูล...</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab(0)">📈 แนวโน้มรายเดือน</div>
+  <div class="tab" onclick="showTab(1)">🔄 เสี่ยง → ป่วย (Funnel)</div>
+  <div class="tab" onclick="showTab(2)">🏘️ เปรียบเทียบรายหมู่บ้าน</div>
+  <div class="tab" onclick="showTab(3)">👥 กลุ่มอายุ & ปัจจัยเสี่ยง</div>
+</div>
+
+<!-- TAB 0 -->
+<div class="content active" id="tab0">
+  <div class="section">📈 แนวโน้มการคัดกรองรายเดือน ปีงบประมาณ 2568</div>
+  <div class="insight-box">
+    <h3>💡 สรุปประเด็นสำคัญจากแนวโน้มรายเดือน</h3>
+    <ul>
+      <li>ช่วง <strong>ต.ค.–ธ.ค. 2568</strong> เป็นช่วง mass screening หลัก — คัดกรองรวม 5,630 ราย คิดเป็น 65% ของทั้งปี</li>
+      <li>เดือน <strong>พ.ย.68 คัดกรองสูงสุด</strong> 3,665 ราย (DM) / 3,370 ราย (HT) — อัตราเสี่ยง DM 42%, HT 56%</li>
+      <li>เดือน <strong>มี.ค.–พ.ค.69</strong> จำนวนน้อยลงแต่ <strong style="color:#c62828">อัตราพบกลุ่มเสี่ยงสูงถึง 50–70%</strong></li>
+      <li>อัตราสงสัยเบาหวาน (risk=2) เดือน <strong style="color:#c62828">พ.ค.69 สูงถึง 50%</strong> (15/30 ราย) — ต้องเร่งติดตาม</li>
+      <li><strong style="color:#2e7d32">ครอบคลุมประชากรเป้าหมาย DM ประมาณ 95-96%</strong> — ผลงานคัดกรองดีเยี่ยม</li>
+    </ul>
+  </div>
+  <div class="last-update" id="lastUpdate0"></div>
+  <div class="kpi-grid" id="kpi0">
+    <div class="loading-overlay"><div class="spinner"></div>กำลังโหลด...</div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>🩸 จำนวนคัดกรองเบาหวาน + สัดส่วนรายเดือน</h3><canvas id="dmMonthlyBar"></canvas></div>
+    <div class="card"><h3>📊 อัตราพบกลุ่มเสี่ยง DM รายเดือน (%)</h3><canvas id="dmMonthlyRate"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>💊 จำนวนคัดกรองความดัน + สัดส่วนรายเดือน</h3><canvas id="htMonthlyBar"></canvas></div>
+    <div class="card"><h3>📊 อัตราพบกลุ่มเสี่ยง HT รายเดือน (%)</h3><canvas id="htMonthlyRate"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>📋 ตารางสรุปรายเดือน</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>เดือน</th><th>DM รวม</th><th>DM ปกติ</th><th>DM เสี่ยง</th><th>DM สงสัย</th><th>DM %เสี่ยง</th><th>HT รวม</th><th>HT ปกติ</th><th>HT เสี่ยง</th><th>HT สงสัย</th><th>HT %เสี่ยง</th></tr></thead>
+      <tbody id="monthlyTableBody"><tr><td colspan="11" class="loading-overlay"><div class="spinner"></div>กำลังโหลด...</td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- TAB 1 -->
+<div class="content" id="tab1">
+  <div class="section">🔄 การเปลี่ยนสถานะ: กลุ่มเสี่ยง → กลุ่มป่วย</div>
+  <div id="funnelAlerts"></div>
+  <div class="last-update" id="lastUpdate1"></div>
+  <div class="kpi-grid" id="kpi1">
+    <div class="loading-overlay"><div class="spinner"></div>กำลังโหลด...</div>
+  </div>
+  <div class="grid2">
+    <div class="card" id="dmFunnelCard">
+      <h3>🔽 Funnel: กลุ่มเบาหวาน (DM)</h3>
+      <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+    <div class="card" id="htFunnelCard">
+      <h3>🔽 Funnel: กลุ่มความดัน (HT)</h3>
+      <div class="loading-overlay"><div class="spinner"></div></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>📊 การกระจาย HbA1c ผู้ป่วยเบาหวาน</h3><canvas id="hba1cFunnel"></canvas></div>
+    <div class="card"><h3>📊 การกระจาย SBP ผู้ป่วยความดัน</h3><canvas id="bpFunnel"></canvas></div>
+  </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="content" id="tab2">
+  <div class="section">🏘️ เปรียบเทียบกลุ่มเสี่ยงและกลุ่มป่วยรายหมู่บ้าน</div>
+  <div class="last-update" id="lastUpdate2"></div>
+  <div class="grid2">
+    <div class="card"><h3>🩸 ภาระโรคเบาหวานรายหมู่บ้าน</h3><canvas id="dmVillCombo"></canvas></div>
+    <div class="card"><h3>💊 ภาระโรคความดันรายหมู่บ้าน</h3><canvas id="htVillCombo"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>📋 ตารางเปรียบเทียบรายหมู่บ้าน</h3>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th rowspan="2">หมู่บ้าน</th>
+        <th colspan="4" style="text-align:center;border-left:2px solid #ddd">เบาหวาน (DM)</th>
+        <th colspan="4" style="text-align:center;border-left:2px solid #ddd">ความดัน (HT)</th>
+      </tr>
+      <tr>
+        <th style="border-left:2px solid #ddd">คัดกรอง</th><th>เสี่ยง</th><th>สงสัย</th><th>ผู้ป่วย</th>
+        <th style="border-left:2px solid #ddd">คัดกรอง</th><th>เสี่ยง</th><th>สงสัย</th><th>ผู้ป่วย</th>
+      </tr></thead>
+      <tbody id="villageTableBody"><tr><td colspan="9" class="loading-overlay"><div class="spinner"></div>กำลังโหลด...</td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>🗺️ หมู่บ้านที่ต้องเฝ้าระวังพิเศษ</h3>
+    <div class="gap-grid">
+      <div class="gap-card" style="background:#fff3e0;border-color:#ff6d00"><strong style="color:#e65100">🔶 DM: หมู่ 4 และหมู่ 5</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 4: เสี่ยง 77 ราย (36.7%), หมู่ 5: เสี่ยง 77 ราย (42.1%) — สูงสุดในตำบล</p></div>
+      <div class="gap-card" style="background:#fce4ec;border-color:#e91e63"><strong style="color:#c62828">🔴 HT: หมู่ 3 และหมู่ 5</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 3: สงสัยความดัน 46 ราย (23.5%), หมู่ 5: 36 ราย (20.8%) — สูงสุดในตำบล</p></div>
+      <div class="gap-card" style="background:#f3e5f5;border-color:#9c27b0"><strong style="color:#6a1b9a">🟣 DM: หมู่ 7 สงสัยสูงสุด</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 7: สงสัยเบาหวาน 17 ราย — สัดส่วนสูงสุดในตำบล (7.8%)</p></div>
+      <div class="gap-card" style="background:#e8f5e9;border-color:#34a853"><strong style="color:#2e7d32">✅ หมู่ 6 และหมู่ 9 เสี่ยงต่ำสุด</strong><p style="font-size:12px;margin-top:4px;color:#666">หมู่ 6: DM เสี่ยง 26.2%, หมู่ 9: 22.5% — ควรศึกษาปัจจัยเพื่อขยายผล</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3 -->
+<div class="content" id="tab3">
+  <div class="section">👥 กลุ่มอายุ & ปัจจัยเสี่ยง</div>
+  <div class="last-update" id="lastUpdate3"></div>
+  <div class="grid2">
+    <div class="card"><h3>🩸 กลุ่มอายุ vs ผลคัดกรองเบาหวาน</h3><canvas id="dmAgeDetail"></canvas></div>
+    <div class="card"><h3>💊 กลุ่มอายุ vs ผลคัดกรองความดัน</h3><canvas id="htAgeDetail"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>📊 อัตราเสี่ยง DM ตามกลุ่มอายุ (%)</h3><canvas id="dmAgeRate"></canvas></div>
+    <div class="card"><h3>📊 อัตราเสี่ยง HT ตามกลุ่มอายุ (%)</h3><canvas id="htAgeRate"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>📋 ตารางวิเคราะห์รายกลุ่มอายุ</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>กลุ่มอายุ</th><th>DM รวม</th><th>DM เสี่ยง+สงสัย</th><th>DM อัตรา</th><th>DM สงสัย</th><th>HT รวม</th><th>HT เสี่ยง+สงสัย</th><th>HT อัตรา</th><th>HT สงสัย</th></tr></thead>
+      <tbody id="ageTableBody"><tr><td colspan="9" class="loading-overlay"><div class="spinner"></div>กำลังโหลด...</td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="insight-box" style="margin-top:16px">
+    <h3>🔍 ข้อสรุปเชิงวิชาการ (Evidence-Based)</h3>
+    <ul>
+      <li>กลุ่ม <strong>55-64 ปี</strong> มีจำนวนสูงสุด (DM 484, HT 457 ราย) และความเสี่ยงสะสมสูง — เป็นกลุ่มเป้าหมายหลักในการแทรกแซง</li>
+      <li>กลุ่ม <strong>65-74 ปี</strong> อัตราเสี่ยง HT 46.7% — สอดคล้อง JNC8 ที่ระบุ อายุ>65 ปี มีความเสี่ยง HT เพิ่มขึ้น 3.5 เท่า</li>
+      <li>กลุ่ม <strong>35-44 ปี</strong> เสี่ยง DM 22.5% — บ่งชี้ความเสี่ยงในวัยทำงาน ควรเพิ่มโปรแกรม lifestyle modification</li>
+      <li>อัตราเสี่ยง DM เพิ่มตามอายุ: 22.5% → 33.0% → 32.2% → 37.6% (<strong style="color:#c62828">เพิ่มขึ้น 67%</strong> ตั้งแต่ 35-44 ถึง 65-74 ปี)</li>
+      <li>ตาม ADA 2024: ผู้ที่ FPG 100-125 mg/dL มีความเสี่ยง T2DM 11-29%/ปี หากไม่แทรกแซง — ต้องติดตาม <strong>462 ราย</strong> เร่งด่วน</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG
+// ============================================================
+const SUPABASE_URL  = 'https://vsbifgdpdusxohvhwtxz.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzYmlmZ2RwZHVzeG9odmh3dHh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NjkyODcsImV4cCI6MjA5NTM0NTI4N30.Mo1ohZJwwp4iHqgp493pBzsAh8M2WdL8bPiqhJpG6-E';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+Chart.defaults.font.family = "'Sarabun',sans-serif";
+Chart.defaults.font.size   = 12;
+
+// Store charts to destroy before redraw
+const charts = {};
+function mkChart(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); }
+  const el = document.getElementById(id);
+  if (!el) return;
+  charts[id] = new Chart(el, cfg);
+}
+
+// ============================================================
+// STATUS INDICATOR
+// ============================================================
+function setStatus(state, text) {
+  const dot  = document.getElementById('statusDot');
+  const span = document.getElementById('statusText');
+  dot.className = 'status-dot ' + (state === 'ok' ? '' : state);
+  span.textContent = text;
+}
+
+function fmtDate(str) {
+  if (!str) return '';
+  const d = new Date(str);
+  return 'อัพเดต: ' + d.toLocaleDateString('th-TH') + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'});
+}
+
+// ============================================================
+// FETCH DATA
+// ============================================================
+let DB = { monthly: [], village: [], age: [], summary: null };
+let loaded = { monthly: false, village: false, age: false, summary: false };
+
+async function loadAll() {
+  setStatus('loading', 'กำลังโหลดข้อมูล...');
+  try {
+    const [m, v, a, s] = await Promise.all([
+      supabase.from('ncd_monthly').select('*').order('month_order'),
+      supabase.from('ncd_village').select('*').order('village'),
+      supabase.from('ncd_age_group').select('*').order('age_order'),
+      supabase.from('ncd_summary').select('*').order('id', {ascending: false}).limit(1)
+    ]);
+    if (m.error || v.error || a.error || s.error) throw new Error('ดึงข้อมูลไม่สำเร็จ');
+    DB.monthly  = m.data;
+    DB.village  = v.data;
+    DB.age      = a.data;
+    DB.summary  = s.data[0];
+    setStatus('ok', 'เชื่อมต่อ Supabase ✓');
+    renderAll();
+    subscribeRealtime();
+  } catch (e) {
+    setStatus('error', 'ไม่สามารถเชื่อมต่อได้');
+    console.error(e);
+  }
+}
+
+// ============================================================
+// REAL-TIME SUBSCRIPTIONS
+// ============================================================
+function subscribeRealtime() {
+  supabase.channel('ncd-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ncd_monthly' },
+      () => { supabase.from('ncd_monthly').select('*').order('month_order').then(r => { DB.monthly = r.data; renderTab0(); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ncd_village' },
+      () => { supabase.from('ncd_village').select('*').order('village').then(r => { DB.village = r.data; renderTab2(); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ncd_age_group' },
+      () => { supabase.from('ncd_age_group').select('*').order('age_order').then(r => { DB.age = r.data; renderTab3(); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ncd_summary' },
+      () => { supabase.from('ncd_summary').select('*').order('id',{ascending:false}).limit(1).then(r => { DB.summary = r.data[0]; renderTab1(); }); })
+    .subscribe();
+}
+
+function renderAll() { renderTab0(); renderTab1(); renderTab2(); renderTab3(); }
+
+// ============================================================
+// TAB 0 — MONTHLY
+// ============================================================
+function renderTab0() {
+  const m = DB.monthly;
+  if (!m.length) return;
+  const labels  = m.map(r => r.month_label);
+  const dmNorm  = m.map(r => r.dm_normal);
+  const dmRisk  = m.map(r => r.dm_risk);
+  const dmSusp  = m.map(r => r.dm_suspect);
+  const htNorm  = m.map(r => r.ht_normal);
+  const htRisk  = m.map(r => r.ht_risk);
+  const htSusp  = m.map(r => r.ht_suspect);
+  const htCris  = m.map(r => r.ht_crisis);
+  const dmPct   = m.map(r => r.dm_total > 0 ? +((r.dm_risk + r.dm_suspect) / r.dm_total * 100).toFixed(1) : 0);
+  const dmPctS  = m.map(r => r.dm_total > 0 ? +((r.dm_suspect) / r.dm_total * 100).toFixed(1) : 0);
+  const htPct   = m.map(r => r.ht_total > 0 ? +((r.ht_risk + r.ht_suspect + r.ht_crisis) / r.ht_total * 100).toFixed(1) : 0);
+  const htPctH  = m.map(r => r.ht_total > 0 ? +((r.ht_suspect + r.ht_crisis) / r.ht_total * 100).toFixed(1) : 0);
+
+  // KPI
+  const maxDMRisk = m.reduce((a,b)=>a.dm_risk>b.dm_risk?a:b);
+  const maxDMSusp = m.reduce((a,b)=>(a.dm_suspect/a.dm_total)>(b.dm_suspect/b.dm_total)?a:b);
+  const maxHTRisk = m.reduce((a,b)=>a.ht_risk>b.ht_risk?a:b);
+  const totalDM   = m.reduce((s,r)=>s+r.dm_total,0);
+  const totalHT   = m.reduce((s,r)=>s+r.ht_total,0);
+  const maxHTSuspPct = m.reduce((a,b)=>(a.ht_suspect/a.ht_total)>(b.ht_suspect/b.ht_total)?a:b);
+
+  document.getElementById('kpi0').innerHTML = `
+    <div class="kpi blue"><div class="kpi-lbl">คัดกรองเบาหวาน รวม</div><div class="kpi-val">${totalDM.toLocaleString()}</div><div class="kpi-sub">ราย ปีงบ 2568</div></div>
+    <div class="kpi yellow"><div class="kpi-lbl">เสี่ยง DM สูงสุด/เดือน</div><div class="kpi-val">${maxDMRisk.dm_risk.toLocaleString()}</div><div class="kpi-sub">ราย (${maxDMRisk.month_label})</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย DM สูงสุด (%)</div><div class="kpi-val">${maxDMSusp.dm_total>0?(maxDMSusp.dm_suspect/maxDMSusp.dm_total*100).toFixed(1):0}%</div><div class="kpi-sub">${maxDMSusp.month_label}</div></div>
+    <div class="kpi blue"><div class="kpi-lbl">คัดกรองความดัน รวม</div><div class="kpi-val">${totalHT.toLocaleString()}</div><div class="kpi-sub">ราย ปีงบ 2568</div></div>
+    <div class="kpi yellow"><div class="kpi-lbl">เสี่ยง HT สูงสุด/เดือน</div><div class="kpi-val">${maxHTRisk.ht_risk.toLocaleString()}</div><div class="kpi-sub">ราย (${maxHTRisk.month_label})</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย HT สูงสุด (%)</div><div class="kpi-val">${maxHTSuspPct.ht_total>0?(maxHTSuspPct.ht_suspect/maxHTSuspPct.ht_total*100).toFixed(1):0}%</div><div class="kpi-sub">${maxHTSuspPct.month_label}</div></div>
+  `;
+
+  const upd = m[m.length-1]?.updated_at;
+  document.getElementById('lastUpdate0').textContent = fmtDate(upd);
+
+  mkChart('dmMonthlyBar', {type:'bar', data:{labels, datasets:[
+    {label:'ปกติ', data:dmNorm, backgroundColor:'#34a853'},
+    {label:'เสี่ยง', data:dmRisk, backgroundColor:'#fbbc04'},
+    {label:'สงสัยเบาหวาน', data:dmSusp, backgroundColor:'#ea4335'}
+  ]}, options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+
+  mkChart('dmMonthlyRate', {type:'line', data:{labels, datasets:[
+    {label:'% กลุ่มเสี่ยงทั้งหมด', data:dmPct, borderColor:'#fbbc04', backgroundColor:'rgba(251,188,4,.15)', fill:true, tension:.3, borderWidth:2, pointRadius:5},
+    {label:'% สงสัยเบาหวาน', data:dmPctS, borderColor:'#ea4335', fill:false, tension:.3, borderWidth:2, pointRadius:5}
+  ]}, options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:100}}}});
+
+  mkChart('htMonthlyBar', {type:'bar', data:{labels, datasets:[
+    {label:'ปกติ', data:htNorm, backgroundColor:'#34a853'},
+    {label:'เสี่ยง', data:htRisk, backgroundColor:'#fbbc04'},
+    {label:'สงสัยความดัน', data:htSusp, backgroundColor:'#ff7043'},
+    {label:'วิกฤต', data:htCris, backgroundColor:'#9c27b0'}
+  ]}, options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+
+  mkChart('htMonthlyRate', {type:'line', data:{labels, datasets:[
+    {label:'% กลุ่มเสี่ยงทั้งหมด', data:htPct, borderColor:'#fbbc04', backgroundColor:'rgba(251,188,4,.15)', fill:true, tension:.3, borderWidth:2, pointRadius:5},
+    {label:'% สงสัยความดัน', data:htPctH, borderColor:'#ea4335', fill:false, tension:.3, borderWidth:2, pointRadius:5}
+  ]}, options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:100}}}});
+
+  // Table
+  document.getElementById('monthlyTableBody').innerHTML = m.map(r => {
+    const dmPctVal = r.dm_total > 0 ? ((r.dm_risk+r.dm_suspect)/r.dm_total*100).toFixed(1) : 0;
+    const htPctVal = r.ht_total > 0 ? ((r.ht_risk+r.ht_suspect)/r.ht_total*100).toFixed(1) : 0;
+    const dmColor  = dmPctVal >= 50 ? '#ffcdd2' : '#fff9c4';
+    const htColor  = htPctVal >= 50 ? '#ffcdd2' : '#fff9c4';
+    return `<tr>
+      <td><strong>${r.month_label}</strong></td>
+      <td>${r.dm_total.toLocaleString()}</td><td>${r.dm_normal.toLocaleString()}</td>
+      <td style="color:#e65100;font-weight:600">${r.dm_risk.toLocaleString()}</td>
+      <td style="color:#c62828;font-weight:600">${r.dm_suspect.toLocaleString()}</td>
+      <td><span style="background:${dmColor};padding:2px 6px;border-radius:4px;font-weight:700">${dmPctVal}%</span></td>
+      <td>${r.ht_total.toLocaleString()}</td><td>${r.ht_normal.toLocaleString()}</td>
+      <td style="color:#e65100;font-weight:600">${r.ht_risk.toLocaleString()}</td>
+      <td style="color:#c62828;font-weight:600">${r.ht_suspect.toLocaleString()}</td>
+      <td><span style="background:${htColor};padding:2px 6px;border-radius:4px;font-weight:700">${htPctVal}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// TAB 1 — FUNNEL / SUMMARY
+// ============================================================
+function renderTab1() {
+  const s = DB.summary;
+  if (!s) return;
+
+  document.getElementById('lastUpdate1').textContent = fmtDate(s.updated_at);
+
+  const dmSuspUnreg = s.dm_suspect - Math.round(s.dm_suspect * 0.442);
+  const htSuspUnreg = s.ht_suspect - Math.round(s.ht_suspect * 0.160);
+
+  document.getElementById('funnelAlerts').innerHTML = `
+    <div class="alert-box"><strong>⚠️ ประเด็นเร่งด่วน:</strong> จากกลุ่มสงสัยเบาหวาน ${s.dm_suspect} ราย พบว่า <strong>${s.dm_suspect - dmSuspUnreg} ราย</strong> อยู่ในทะเบียนผู้ป่วยเบาหวานแล้ว — เหลืออีก <strong>${dmSuspUnreg} ราย ที่ยังไม่ได้รับการวินิจฉัยหรือขึ้นทะเบียน</strong> ต้องติดตามเร่งด่วน!</div>
+    <div class="success-box"><strong>✅ ด้านความดัน:</strong> ระบบการติดตามทำงานได้ดี — ผู้ป่วยความดัน ${s.ht_patients} ราย ควบคุมได้ถึง <strong>${(s.ht_controlled/s.ht_patients*100).toFixed(1)}%</strong> (${s.ht_controlled}/${s.ht_patients})</div>
+  `;
+
+  document.getElementById('kpi1').innerHTML = `
+    <div class="kpi blue"><div class="kpi-lbl">กลุ่มเสี่ยง DM รวม</div><div class="kpi-val">${s.dm_risk_total}</div><div class="kpi-sub">เสี่ยง ${s.dm_risk_total - s.dm_suspect} + สงสัย ${s.dm_suspect} ราย</div></div>
+    <div class="kpi purple"><div class="kpi-lbl">ผู้ป่วย DM ทะเบียน</div><div class="kpi-val">${s.dm_patients}</div><div class="kpi-sub">${(s.dm_patients/s.dm_total_screen*100).toFixed(1)}% ของผู้คัดกรอง</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย DM ยังไม่ขึ้นทะเบียน</div><div class="kpi-val">${dmSuspUnreg}</div><div class="kpi-sub">จาก ${s.dm_suspect} ราย — ต้องติดตาม!</div></div>
+    <div class="kpi blue"><div class="kpi-lbl">กลุ่มเสี่ยง HT รวม</div><div class="kpi-val">${s.ht_risk_total}</div><div class="kpi-sub">เสี่ยง ${s.ht_risk_total - s.ht_suspect} + สงสัย ${s.ht_suspect} ราย</div></div>
+    <div class="kpi purple"><div class="kpi-lbl">ผู้ป่วย HT ทะเบียน</div><div class="kpi-val">${s.ht_patients}</div><div class="kpi-sub">${(s.ht_patients/s.ht_total_screen*100).toFixed(1)}% ของผู้คัดกรอง</div></div>
+    <div class="kpi red"><div class="kpi-lbl">สงสัย HT ยังไม่ขึ้นทะเบียน</div><div class="kpi-val">${htSuspUnreg}</div><div class="kpi-sub">จาก ${s.ht_suspect} ราย — ต้องติดตาม!</div></div>
+  `;
+
+  const dmTotal = s.dm_total_screen;
+  const htTotal = s.ht_total_screen;
+
+  document.getElementById('dmFunnelCard').innerHTML = `
+    <h3>🔽 Funnel: กลุ่มเบาหวาน (DM)</h3>
+    <div class="funnel">
+      ${funnelRow('คัดกรองทั้งหมด', dmTotal, dmTotal, '#1a73e8')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('กลุ่มเสี่ยง', s.dm_risk_total, dmTotal, '#fbbc04')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('สงสัยเบาหวาน', s.dm_suspect, dmTotal, '#ff7043')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('ผู้ป่วยในทะเบียน', s.dm_patients, dmTotal, '#ea4335')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('ควบคุมได้', s.dm_controlled, dmTotal, '#34a853')}
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:8px;font-size:12px">
+      <strong style="color:#e65100">⚠️ ช่องว่าง:</strong> สงสัยเบาหวาน ${dmSuspUnreg} ราย (${(dmSuspUnreg/s.dm_suspect*100).toFixed(1)}%) ยังไม่ได้รับการวินิจฉัย
+    </div>`;
+
+  document.getElementById('htFunnelCard').innerHTML = `
+    <h3>🔽 Funnel: กลุ่มความดัน (HT)</h3>
+    <div class="funnel">
+      ${funnelRow('คัดกรองทั้งหมด', htTotal, htTotal, '#1a73e8')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('กลุ่มเสี่ยง', s.ht_risk_total, htTotal, '#fbbc04')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('สงสัยความดัน', s.ht_suspect, htTotal, '#ff7043')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('ผู้ป่วยในทะเบียน', s.ht_patients, htTotal, '#ea4335')}
+      <div class="arrow-down">↓</div>
+      ${funnelRow('ควบคุมได้', s.ht_controlled, htTotal, '#34a853')}
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:8px;font-size:12px">
+      <strong style="color:#e65100">⚠️ ช่องว่าง:</strong> สงสัยความดัน ${htSuspUnreg} ราย (${(htSuspUnreg/s.ht_suspect*100).toFixed(1)}%) ยังไม่ได้รับการวินิจฉัย
+    </div>`;
+
+  mkChart('hba1cFunnel', {type:'bar', data:{
+    labels:['<7% (ดี)','7-8%','8-9%','≥9% (วิกฤต)'],
+    datasets:[{label:'ผู้ป่วย', data:[s.dm_hba1c_good, s.dm_hba1c_fair, s.dm_hba1c_poor, s.dm_hba1c_crisis],
+      backgroundColor:['#34a853','#fbbc04','#ff7043','#ea4335']}]
+  }, options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+
+  mkChart('bpFunnel', {type:'bar', data:{
+    labels:['<130 (ดี)','130-140','140-160','≥160 (สูงมาก)'],
+    datasets:[{label:'ผู้ป่วย', data:[s.ht_sbp_good, s.ht_sbp_fair, s.ht_sbp_poor, s.ht_sbp_crisis],
+      backgroundColor:['#34a853','#fbbc04','#ff7043','#ea4335']}]
+  }, options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+}
+
+function funnelRow(label, val, total, color) {
+  const pct = total > 0 ? (val/total*100).toFixed(1) : 0;
+  const w   = Math.max(5, pct);
+  return `<div class="funnel-row">
+    <div class="funnel-label">${label}</div>
+    <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${w}%;background:${color}">${val.toLocaleString()} ราย</div></div>
+    <div class="funnel-pct">${pct}%</div>
+  </div>`;
+}
+
+// ============================================================
+// TAB 2 — VILLAGE
+// ============================================================
+function renderTab2() {
+  const v = DB.village;
+  if (!v.length) return;
+  const labels = v.map(r => 'หมู่ '+r.village);
+  const upd = v[v.length-1]?.updated_at;
+  document.getElementById('lastUpdate2').textContent = fmtDate(upd);
+
+  mkChart('dmVillCombo', {type:'bar', data:{labels, datasets:[
+    {label:'คัดกรอง', data:v.map(r=>r.dm_screen), backgroundColor:'rgba(26,115,232,.25)'},
+    {label:'เสี่ยง', data:v.map(r=>r.dm_risk), backgroundColor:'#fbbc04'},
+    {label:'สงสัย', data:v.map(r=>r.dm_suspicious), backgroundColor:'#ea4335'},
+    {label:'ผู้ป่วย', data:v.map(r=>r.dm_patients), backgroundColor:'#9c27b0'}
+  ]}, options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
+
+  mkChart('htVillCombo', {type:'bar', data:{labels, datasets:[
+    {label:'คัดกรอง', data:v.map(r=>r.ht_screen), backgroundColor:'rgba(26,115,232,.25)'},
+    {label:'เสี่ยง', data:v.map(r=>r.ht_risk), backgroundColor:'#fbbc04'},
+    {label:'สงสัย', data:v.map(r=>r.ht_suspicious), backgroundColor:'#ea4335'},
+    {label:'ผู้ป่วย', data:v.map(r=>r.ht_patients), backgroundColor:'#9c27b0'}
+  ]}, options:{plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true}}}});
+
+  document.getElementById('villageTableBody').innerHTML = v.map(r => {
+    const dmPct = r.dm_screen > 0 ? ((r.dm_risk+r.dm_suspicious)/r.dm_screen*100).toFixed(0) : 0;
+    const htPct = r.ht_screen > 0 ? ((r.ht_risk+r.ht_suspicious)/r.ht_screen*100).toFixed(0) : 0;
+    return `<tr>
+      <td><strong>หมู่ ${r.village}</strong></td>
+      <td style="border-left:2px solid #eee">${r.dm_screen}</td>
+      <td><span style="color:#e65100;font-weight:600">${r.dm_risk} (${dmPct}%)</span></td>
+      <td><span style="color:#c62828;font-weight:600">${r.dm_suspicious}</span></td>
+      <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">${r.dm_patients}</span></td>
+      <td style="border-left:2px solid #eee">${r.ht_screen}</td>
+      <td><span style="color:#e65100;font-weight:600">${r.ht_risk} (${htPct}%)</span></td>
+      <td><span style="color:#c62828;font-weight:600">${r.ht_suspicious}</span></td>
+      <td><span style="background:#e3f2fd;padding:2px 6px;border-radius:4px;font-weight:600">${r.ht_patients}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// TAB 3 — AGE GROUP
+// ============================================================
+function renderTab3() {
+  const a = DB.age;
+  if (!a.length) return;
+  const labels = a.map(r => r.age_group);
+  const upd = a[a.length-1]?.updated_at;
+  document.getElementById('lastUpdate3').textContent = fmtDate(upd);
+
+  mkChart('dmAgeDetail', {type:'bar', data:{labels, datasets:[
+    {label:'ปกติ', data:a.map(r=>r.dm_normal), backgroundColor:'#34a853'},
+    {label:'เสี่ยง', data:a.map(r=>r.dm_risk), backgroundColor:'#fbbc04'},
+    {label:'สงสัย', data:a.map(r=>r.dm_suspect), backgroundColor:'#ea4335'}
+  ]}, options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+
+  mkChart('htAgeDetail', {type:'bar', data:{labels, datasets:[
+    {label:'ปกติ', data:a.map(r=>r.ht_normal), backgroundColor:'#34a853'},
+    {label:'เสี่ยง', data:a.map(r=>r.ht_risk), backgroundColor:'#fbbc04'},
+    {label:'สงสัย', data:a.map(r=>r.ht_suspect||0), backgroundColor:'#ff7043'},
+    {label:'วิกฤต', data:a.map(r=>r.ht_crisis||0), backgroundColor:'#9c27b0'}
+  ]}, options:{scales:{x:{stacked:true},y:{stacked:true}},plugins:{legend:{position:'bottom'}}}});
+
+  mkChart('dmAgeRate', {type:'line', data:{labels, datasets:[
+    {label:'% เสี่ยง+สงสัย DM', data:a.map(r=>+(((r.dm_risk+r.dm_suspect)/r.dm_total)*100).toFixed(1)), borderColor:'#fbbc04', backgroundColor:'rgba(251,188,4,.15)', fill:true, tension:.3, borderWidth:2, pointRadius:6},
+    {label:'% สงสัยเบาหวาน', data:a.map(r=>+((r.dm_suspect/r.dm_total)*100).toFixed(1)), borderColor:'#ea4335', fill:false, tension:.3, borderWidth:2, pointRadius:6}
+  ]}, options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:50}}}});
+
+  mkChart('htAgeRate', {type:'line', data:{labels, datasets:[
+    {label:'% เสี่ยง+สงสัย HT', data:a.map(r=>+(((r.ht_risk+(r.ht_suspect||0)+(r.ht_crisis||0))/r.ht_total)*100).toFixed(1)), borderColor:'#fbbc04', backgroundColor:'rgba(251,188,4,.15)', fill:true, tension:.3, borderWidth:2, pointRadius:6},
+    {label:'% สงสัยความดัน', data:a.map(r=>(+(((r.ht_suspect||0)+(r.ht_crisis||0))/r.ht_total*100).toFixed(1))), borderColor:'#ea4335', fill:false, tension:.3, borderWidth:2, pointRadius:6}
+  ]}, options:{plugins:{legend:{position:'bottom'}},scales:{y:{min:0,max:60}}}});
+
+  document.getElementById('ageTableBody').innerHTML = a.map(r => {
+    const dmRatePct = r.dm_total > 0 ? ((r.dm_risk+r.dm_suspect)/r.dm_total*100).toFixed(1) : 0;
+    const htRatePct = r.ht_total > 0 ? ((r.ht_risk+(r.ht_suspect||0)+(r.ht_crisis||0))/r.ht_total*100).toFixed(1) : 0;
+    const dmColor = dmRatePct >= 35 ? '#ffcdd2' : dmRatePct >= 30 ? '#fff9c4' : '#e8f5e9';
+    const htColor = htRatePct >= 45 ? '#ffcdd2' : htRatePct >= 35 ? '#fff9c4' : '#e8f5e9';
+    return `<tr>
+      <td><strong>${r.age_group}</strong></td>
+      <td>${r.dm_total}</td>
+      <td style="font-weight:600;color:#e65100">${r.dm_risk+r.dm_suspect}</td>
+      <td><span style="background:${dmColor};padding:2px 6px;border-radius:4px;font-weight:700">${dmRatePct}%</span></td>
+      <td style="color:#c62828;font-weight:600">${r.dm_suspect}</td>
+      <td>${r.ht_total}</td>
+      <td style="font-weight:600;color:#e65100">${r.ht_risk+(r.ht_suspect||0)+(r.ht_crisis||0)}</td>
+      <td><span style="background:${htColor};padding:2px 6px;border-radius:4px;font-weight:700">${htRatePct}%</span></td>
+      <td style="color:#c62828;font-weight:600">${(r.ht_suspect||0)+(r.ht_crisis||0)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// TAB SWITCH
+// ============================================================
+const tabContents = document.querySelectorAll('.content');
+const tabBtns = document.querySelectorAll('.tab');
+function showTab(i) {
+  tabContents.forEach((c,j) => c.classList.toggle('active', j===i));
+  tabBtns.forEach((b,j) => b.classList.toggle('active', j===i));
+}
+
+// ============================================================
+// INIT
+// ============================================================
+loadAll();
+</script>
+</body>
+</html>
